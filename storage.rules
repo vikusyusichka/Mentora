@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // За замовчуванням доступ закрито.
+    // Конкретні шляхи (фото профілю, файли ДЗ) відкриваються у відповідних блоках.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

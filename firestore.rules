@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ── users ──────────────────────────────────────────────
+    // Профіль акаунта. Роль обирається при онбордингу (create),
+    // але ПІСЛЯ створення не може бути змінена з клієнта.
+    // Джерело істини для авторизації — custom claim (ставить Cloud Function).
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+
+      allow create: if isSelf(uid)
+        && request.resource.data.role in ['tutor', 'student', 'parent']
+        && request.resource.data.keys().hasOnly(
+             ['role', 'displayName', 'email', 'photoURL', 'createdAt']
+           );
+
+      allow update: if isSelf(uid)
+        && request.resource.data.role == resource.data.role; // роль незмінна з клієнта
+
+      allow delete: if false;
+    }
+
+    // Решта колекцій закриті за замовчуванням — правила додаються по блоках плану.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
