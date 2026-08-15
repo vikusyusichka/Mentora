@@ -2,8 +2,26 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // За замовчуванням доступ закрито.
-    // Конкретні шляхи (фото профілю, файли ДЗ) відкриваються у відповідних блоках.
+
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isImageUnder(maxMb) {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < maxMb * 1024 * 1024;
+    }
+
+    // Фото профілю репетитора. Читання публічне (каталог відкритий для гостей),
+    // запис — лише власник, лише зображення до 5 МБ.
+    match /tutorPhotos/{tutorId}/{fileName} {
+      allow read: if true;
+      allow write: if isSelf(tutorId) && isImageUnder(5);
+      allow delete: if isSelf(tutorId);
+    }
+
+    // Решта шляхів закрита. Файли ДЗ відкриються у Блоці C.3
+    // (доступ через enrollment: репетитор + учень + батьки).
     match /{allPaths=**} {
       allow read, write: if false;
     }

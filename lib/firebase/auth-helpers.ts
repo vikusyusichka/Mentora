@@ -12,8 +12,7 @@ import {
   type User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { auth, db, functions } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client";
 import type { Role } from "@/lib/types";
 
 const googleProvider = new GoogleAuthProvider();
@@ -61,8 +60,11 @@ export async function getUserProfile(uid: string) {
 /**
  * Завершує онбординг:
  *  1) створює users/{uid} з роллю та профілем (під Security Rules),
- *  2) викликає Cloud Function setUserRole, що мірорить роль у custom claim,
+ *  2) викликає /api/set-role, що мірорить роль у custom claim,
  *  3) оновлює токен, щоб claim одразу став доступним клієнту.
+ *
+ * Роут на Vercel, а не Cloud Function: функції потребують платного
+ * плану Blaze, а модель безпеки тут ідентична.
  */
 export async function completeOnboarding(
   user: User,
@@ -83,12 +85,20 @@ export async function completeOnboarding(
     createdAt: serverTimestamp(),
   });
 
-  const setUserRole = httpsCallable<void, { role: Role }>(
-    functions,
-    "setUserRole"
-  );
-  const res = await setUserRole();
+  // ID-токен доводить серверу, хто ми, — uid він бере лише звідти.
+  const idToken = await user.getIdToken();
+  const res = await fetch("/api/set-role", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+
+  if (!res.ok) {
+    const { error } = await res.json().catch(() => ({ error: null }));
+    throw new Error(error ?? "Не вдалося призначити роль.");
+  }
+
+  const data = (await res.json()) as { role: Role };
 
   await user.getIdToken(true); // оновити claims у поточному токені
-  return res.data.role;
+  return data.role;
 }

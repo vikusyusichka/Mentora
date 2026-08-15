@@ -11,6 +11,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function hasRole(role) {
+      return isSignedIn() && request.auth.token.role == role;
+    }
+
     // ── users ──────────────────────────────────────────────
     // Профіль акаунта. Роль обирається при онбордингу (create),
     // але ПІСЛЯ створення не може бути змінена з клієнта.
@@ -28,6 +32,54 @@ service cloud.firestore {
         && request.resource.data.role == resource.data.role; // роль незмінна з клієнта
 
       allow delete: if false;
+    }
+
+    // ── tutorProfiles ──────────────────────────────────────
+    // Публічна вітрина маркетплейсу.
+    match /tutorProfiles/{tutorId} {
+
+      // Поля, які має право писати лише сервер (Cloud Functions через Admin SDK):
+      // рейтинг рахує тригер відгуків, payoutAccountId ставить платіжний онбординг.
+      function serverFieldsUnchanged() {
+        return request.resource.data.ratingAvg == resource.data.ratingAvg
+          && request.resource.data.ratingCount == resource.data.ratingCount
+          && request.resource.data.get('payoutAccountId', null)
+             == resource.data.get('payoutAccountId', null);
+      }
+
+      function validProfile() {
+        return request.resource.data.displayName is string
+          && request.resource.data.displayName.size() >= 2
+          && request.resource.data.bio is string
+          && request.resource.data.languages is list
+          && request.resource.data.languages.size() > 0
+          && request.resource.data.levelsTaught is list
+          && request.resource.data.levelsTaught.size() > 0
+          && request.resource.data.pricePerLesson is number
+          && request.resource.data.pricePerLesson > 0
+          && request.resource.data.format in ['online', 'offline', 'both']
+          && request.resource.data.isPublished is bool;
+      }
+
+      // Гість бачить лише опубліковані; власник бачить і свою чернетку.
+      allow get: if resource.data.isPublished == true || isSelf(tutorId);
+      allow list: if resource.data.isPublished == true || isSelf(tutorId);
+
+      // Створити профіль може лише сам репетитор (роль з токена),
+      // і лише з нульовим рейтингом — накрутити старт неможливо.
+      allow create: if isSelf(tutorId)
+        && hasRole('tutor')
+        && validProfile()
+        && request.resource.data.ratingAvg == 0
+        && request.resource.data.ratingCount == 0
+        && !request.resource.data.keys().hasAny(['payoutAccountId']);
+
+      allow update: if isSelf(tutorId)
+        && hasRole('tutor')
+        && validProfile()
+        && serverFieldsUnchanged();
+
+      allow delete: if false; // знімається з публікації через isPublished
     }
 
     // Решта колекцій закриті за замовчуванням — правила додаються по блоках плану.

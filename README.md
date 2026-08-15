@@ -17,12 +17,16 @@
 - **JDK 21+** — потрібен для Firebase Emulator Suite та rules-тестів.
   `firebase-tools` більше не підтримує Java < 21.
   - Перевірити: `java -version`
-  - Якщо стоїть стара Java, встанови сучасний JDK, напр.:
+  - Якщо стоїть стара Java:
     ```bash
     winget install --id EclipseAdoptium.Temurin.21.JDK -e
     ```
-  - Або, якщо встановлено Android Studio, використай його вбудований JBR 21,
-    вказавши на нього PATH/JAVA_HOME (шлях: `…/Android/Android Studio/jbr`).
+    Після встановлення **відкрий новий термінал** — у старому вікні лишається
+    попередній PATH, і `java -version` показуватиме стару версію, хоча все
+    встановилось коректно.
+  - Якщо і в новому вікні стара версія — у системному PATH шлях до старої Java
+    (напр. `C:\ProgramData\Oracle\Java\javapath`) стоїть вище за новий JDK.
+    Підніми запис Adoptium вище в змінних середовища.
 
 ## Швидкий старт
 
