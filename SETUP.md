@@ -82,17 +82,17 @@ npx firebase login:list
 
 ---
 
-## Крок 6. Створи базу і сховище
+## Крок 6. Створи базу
 
-**Firestore:**
 1. Build → **Firestore Database** → **Create database**
 2. Обери **Production mode** (правила ми вже написали свої)
 3. Локація: `europe-west3` або `eur3` — ближче до України
 4. Enable
 
-**Storage:**
-1. Build → **Storage** → **Get started**
-2. Production mode → Next → та сама локація → Done
+> **Storage НЕ створюємо.** Google вимагає за нього платний план Blaze
+> із карткою. Тому фото профілю задається посиланням, а не завантаженням
+> файлу. Так само ми **не деплоїмо Cloud Functions** — видача ролей
+> працює через `/api/set-role` на Vercel, безкоштовно.
 
 ---
 
@@ -135,15 +135,37 @@ FIREBASE_STORAGE_EMULATOR_HOST=127.0.0.1:9199
 
 ## Крок 8. Залий правила безпеки у Firebase
 
+Відкрий термінал **у папці проєкту** (`H:\Projects\Mentora`) і виконай:
+
 ```bash
-npx firebase deploy --only firestore:rules,storage
+npx firebase deploy --only firestore:rules
 ```
 
-**Як перевірити:** у консолі Firestore → вкладка **Rules** з'являться наші правила
-(там буде `tutorProfiles`).
+⚠️ Саме `firestore:rules`, **без** `,storage` — Storage у нас немає (крок 6),
+і з ним команда впаде з помилкою.
+
+**Як перевірити:** Firebase Console → Firestore Database → вкладка **Rules**.
+Там має з'явитись наш текст зі словом `tutorProfiles`.
 
 > Без цього кроку база стоятиме з дефолтними правилами й застосунок
 > не працюватиме як треба.
+
+---
+
+## Крок 8.5. Візьми ключ сервісного акаунта
+
+Він потрібен, щоб `/api/set-role` на Vercel міг видавати ролі.
+
+1. Firebase Console → шестерня біля **Project Overview** → **Project settings**
+2. Вкладка **Service accounts**
+3. Кнопка **Generate new private key** → **Generate key**
+4. Завантажиться `.json` файл — **не додавай його в проєкт і не коміть**
+
+Відкрий цей файл блокнотом і скопіюй **увесь вміст** (від `{` до `}`).
+Він знадобиться на кроці 10.
+
+> Це справжній ключ доступу до твого Firebase. Нікому не показуй,
+> не вставляй у чат і не клади в репозиторій. Тільки в поле Vercel.
 
 ---
 
@@ -170,9 +192,11 @@ git push -u origin main
 
 1. Відкрий https://vercel.com → **Sign up** через GitHub
 2. **Add New** → **Project**
-3. Знайди репозиторій `mentora` → **Import**
-4. Розділ **Environment Variables** — додай **шість** змінних
-   (ті самі значення, що в `.env.local`):
+3. Знайди репозиторій `Mentora` → **Import**
+4. **Application Preset** — має бути **Next.js**, а не `Other`.
+   Якщо стоїть `Other` — зміни на Next.js, інакше збірка не запуститься правильно.
+   Build/Output/Install команди не чіпай, лиши порожніми.
+5. Розділ **Environment Variables** — додай **сім** змінних:
 
    | Name | Value |
    |---|---|
@@ -182,11 +206,19 @@ git push -u origin main
    | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | твій storageBucket |
    | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | твій senderId |
    | `NEXT_PUBLIC_FIREBASE_APP_ID` | твій appId |
+   | `FIREBASE_SERVICE_ACCOUNT_KEY` | **увесь JSON** з кроку 8.5, одним рядком |
 
-   ⚠️ **Не додавай** `NEXT_PUBLIC_USE_FIREBASE_EMULATOR` і жодні
-   `*_EMULATOR_HOST` — інакше сайт шукатиме емулятор і зламається.
+   Перші шість візьми з `.env.local` (без лапок і ком).
+   Сьома — це вміст `.json` файлу з кроку 8.5.
 
-5. **Deploy** → зачекай 1–2 хвилини
+   ⚠️ **Не додавай** `NEXT_PUBLIC_USE_FIREBASE_EMULATOR`, `FIREBASE_PROJECT_ID`
+   і жодні `*_EMULATOR_HOST` — інакше сайт шукатиме емулятор на сервері
+   й зламається.
+
+6. **Deploy** → зачекай 1–2 хвилини
+
+> Якщо забудеш `FIREBASE_SERVICE_ACCOUNT_KEY` — сайт відкриється,
+> але на кроці вибору ролі буде помилка: сервер не зможе видати роль.
 
 **Як перевірити:** відкрий отриманий лінк — має завантажитись головна Mentora.
 

@@ -21,11 +21,32 @@ function createAdminApp(): App {
 
   // Продакшн: сервісний акаунт у змінній оточення (JSON-рядок).
   if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    } catch {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT_KEY містить некоректний JSON. " +
+          "Має бути весь вміст .json-файлу сервісного акаунта — від { до }."
+      );
+    }
     return initializeApp({ credential: cert(serviceAccount), projectId });
   }
 
-  // Емулятори / середовища з ADC — досить projectId.
+  // Емулятори: облікові дані не потрібні, достатньо projectId.
+  const usingEmulators =
+    !!process.env.FIRESTORE_EMULATOR_HOST ||
+    !!process.env.FIREBASE_AUTH_EMULATOR_HOST;
+
+  if (!usingEmulators) {
+    // Без цього Admin SDK впаде десь глибше з незрозумілою помилкою.
+    throw new Error(
+      "Не задано FIREBASE_SERVICE_ACCOUNT_KEY. Додай його у змінні оточення " +
+        "(Vercel → Settings → Environment Variables) — без нього сервер " +
+        "не може перевіряти токени й видавати ролі."
+    );
+  }
+
   return initializeApp({ projectId });
 }
 
