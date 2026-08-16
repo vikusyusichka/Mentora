@@ -36,13 +36,13 @@ export async function POST(request: Request) {
 
   let uid: string;
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await adminAuth().verifyIdToken(idToken);
     uid = decoded.uid;
   } catch {
     return Response.json({ error: "Недійсний токен." }, { status: 401 });
   }
 
-  const snap = await adminDb.doc(`users/${uid}`).get();
+  const snap = await adminDb().doc(`users/${uid}`).get();
   if (!snap.exists) {
     return Response.json(
       { error: "Профіль користувача не створено." },
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Невідома роль у профілі." }, { status: 400 });
   }
 
-  const user = await adminAuth.getUser(uid);
+  const user = await adminAuth().getUser(uid);
   const existing = user.customClaims?.role as string | undefined;
 
   if (existing === role) {
@@ -68,6 +68,6 @@ export async function POST(request: Request) {
     );
   }
 
-  await adminAuth.setCustomUserClaims(uid, { role });
+  await adminAuth().setCustomUserClaims(uid, { role });
   return Response.json({ role });
 }

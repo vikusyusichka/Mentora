@@ -48,6 +48,10 @@ design-reference/
 # робочий roadmap (особистий планувальний документ)
 ROADMAP.md
 
+# файли AI-інструментів — корисні локально, але не частина проєкту
+CLAUDE.md
+AGENTS.md
+
 # firebase
 .firebase/
 firebase-debug.log

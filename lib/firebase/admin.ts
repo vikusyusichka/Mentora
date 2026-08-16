@@ -1,7 +1,7 @@
 import "server-only";
 // Admin SDK для серверних частин Next.js (route handlers, server actions).
 // У режимі емуляторів під'єднується автоматично через змінні
-// FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST / STORAGE_EMULATOR_HOST.
+// FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST.
 import {
   initializeApp,
   getApps,
@@ -9,11 +9,26 @@ import {
   cert,
   type App,
 } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getAuth, type Auth } from "firebase-admin/auth";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
-function createAdminApp(): App {
-  if (getApps().length) return getApp();
+let cached: App | undefined;
+
+/**
+ * Ініціалізація ЛІНИВА і навмисно не на рівні модуля.
+ *
+ * Next.js під час збірки збирає дані для роутів, тобто виконує імпорти.
+ * Якби перевірка облікових даних жила в тілі модуля, відсутня змінна
+ * оточення валила б увесь білд — і сайт не деплоївся б цілком, замість
+ * того щоб зламатись лише один ендпоінт. Тому перевіряємо на першому
+ * реальному запиті.
+ */
+function adminApp(): App {
+  if (cached) return cached;
+  if (getApps().length) {
+    cached = getApp();
+    return cached;
+  }
 
   const projectId =
     process.env.FIREBASE_PROJECT_ID ??
@@ -30,7 +45,8 @@ function createAdminApp(): App {
           "Має бути весь вміст .json-файлу сервісного акаунта — від { до }."
       );
     }
-    return initializeApp({ credential: cert(serviceAccount), projectId });
+    cached = initializeApp({ credential: cert(serviceAccount), projectId });
+    return cached;
   }
 
   // Емулятори: облікові дані не потрібні, достатньо projectId.
@@ -39,7 +55,6 @@ function createAdminApp(): App {
     !!process.env.FIREBASE_AUTH_EMULATOR_HOST;
 
   if (!usingEmulators) {
-    // Без цього Admin SDK впаде десь глибше з незрозумілою помилкою.
     throw new Error(
       "Не задано FIREBASE_SERVICE_ACCOUNT_KEY. Додай його у змінні оточення " +
         "(Vercel → Settings → Environment Variables) — без нього сервер " +
@@ -47,10 +62,14 @@ function createAdminApp(): App {
     );
   }
 
-  return initializeApp({ projectId });
+  cached = initializeApp({ projectId });
+  return cached;
 }
 
-const adminApp = createAdminApp();
+export function adminAuth(): Auth {
+  return getAuth(adminApp());
+}
 
-export const adminAuth = getAuth(adminApp);
-export const adminDb = getFirestore(adminApp);
+export function adminDb(): Firestore {
+  return getFirestore(adminApp());
+}
