@@ -45,8 +45,9 @@ serviceAccountKey.json
 # design reference (макети + DESIGN.md, не частина збірки)
 design-reference/
 
-# робочий roadmap (особистий планувальний документ)
+# робочі документи (плани й контекст для чату, не частина проєкту)
 ROADMAP.md
+CONTEXT.md
 
 # файли AI-інструментів — корисні локально, але не частина проєкту
 CLAUDE.md
