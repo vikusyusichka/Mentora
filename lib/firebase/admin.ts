@@ -8,6 +8,7 @@ import {
   getApp,
   cert,
   type App,
+  type ServiceAccount,
 } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
@@ -36,7 +37,7 @@ function adminApp(): App {
 
   // Продакшн: сервісний акаунт у змінній оточення (JSON-рядок).
   if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    let serviceAccount;
+    let serviceAccount: unknown;
     try {
       serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     } catch {
@@ -45,7 +46,29 @@ function adminApp(): App {
           "Має бути весь вміст .json-файлу сервісного акаунта — від { до }."
       );
     }
-    cached = initializeApp({ credential: cert(serviceAccount), projectId });
+
+    // Часта помилка: значення вставили в лапках. Тоді JSON.parse поверне
+    // рядок, а firebase-admin спробує знайти файл із такою назвою і впаде
+    // із заплутаним «no such file or directory». Ловимо це тут.
+    const looksValid =
+      typeof serviceAccount === "object" &&
+      serviceAccount !== null &&
+      "project_id" in serviceAccount &&
+      "client_email" in serviceAccount &&
+      "private_key" in serviceAccount;
+
+    if (!looksValid) {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT_KEY має неправильний вміст. Очікується " +
+          "JSON-об'єкт із полями project_id, client_email і private_key. " +
+          "Найчастіша причина — значення вставлено в лапках: приберіть їх, " +
+          "рядок має починатися з { і закінчуватися }."
+      );
+    }
+    cached = initializeApp({
+      credential: cert(serviceAccount as ServiceAccount),
+      projectId,
+    });
     return cached;
   }
 

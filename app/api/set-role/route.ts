@@ -1,13 +1,45 @@
-import { adminAuth, adminDb } from "@/lib/firebase/admin";
-
 // firebase-admin потребує Node.js runtime (на Edge не працює).
 export const runtime = "nodejs";
+
+/**
+ * Admin SDK підвантажується динамічно всередині обробника.
+ *
+ * Статичний import означав би, що будь-яка проблема із завантаженням
+ * модуля (брак змінної оточення, несумісність пакета) валить увесь роут
+ * ще до нашого коду — і клієнт отримує німу 500 без пояснення.
+ * З динамічним import така помилка потрапляє в наш catch і повертається
+ * читабельним JSON.
+ */
+async function admin() {
+  return import("@/lib/firebase/admin");
+}
 
 const ROLES = ["tutor", "student", "parent"] as const;
 type Role = (typeof ROLES)[number];
 
 function isRole(value: unknown): value is Role {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value);
+}
+
+/**
+ * Перевірка конфігурації сервера. Не віддає жодних секретів — лише
+ * чи вдалося ініціалізувати Admin SDK, і якщо ні, то чого бракує.
+ * Потрібна, щоб діагностувати деплой без доступу до логів хостингу.
+ */
+export async function GET() {
+  try {
+    const { adminAuth } = await admin();
+    adminAuth();
+    return Response.json({ ok: true });
+  } catch (err) {
+    return Response.json(
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : "Невідома помилка.",
+      },
+      { status: 500 }
+    );
+  }
 }
 
 /**
@@ -34,40 +66,57 @@ export async function POST(request: Request) {
     );
   }
 
-  let uid: string;
   try {
-    const decoded = await adminAuth().verifyIdToken(idToken);
-    uid = decoded.uid;
-  } catch {
-    return Response.json({ error: "Недійсний токен." }, { status: 401 });
-  }
+    const { adminAuth, adminDb } = await admin();
+    // Ініціалізація ЗЗОВНІ внутрішнього try: інакше помилка конфігурації
+    // (напр. відсутній ключ) видавалася б за «недійсний токен».
+    const auth = adminAuth();
+    const db = adminDb();
 
-  const snap = await adminDb().doc(`users/${uid}`).get();
-  if (!snap.exists) {
-    return Response.json(
-      { error: "Профіль користувача не створено." },
-      { status: 409 }
-    );
-  }
+    let uid: string;
+    try {
+      const decoded = await auth.verifyIdToken(idToken);
+      uid = decoded.uid;
+    } catch {
+      return Response.json({ error: "Недійсний токен." }, { status: 401 });
+    }
 
-  const role = snap.get("role");
-  if (!isRole(role)) {
-    return Response.json({ error: "Невідома роль у профілі." }, { status: 400 });
-  }
+    const snap = await db.doc(`users/${uid}`).get();
+    if (!snap.exists) {
+      return Response.json(
+        { error: "Профіль користувача не створено." },
+        { status: 409 }
+      );
+    }
 
-  const user = await adminAuth().getUser(uid);
-  const existing = user.customClaims?.role as string | undefined;
+    const role = snap.get("role");
+    if (!isRole(role)) {
+      return Response.json(
+        { error: "Невідома роль у профілі." },
+        { status: 400 }
+      );
+    }
 
-  if (existing === role) {
-    return Response.json({ role }); // ідемпотентно
-  }
-  if (existing) {
-    return Response.json(
-      { error: "Роль уже призначена й не може бути змінена." },
-      { status: 409 }
-    );
-  }
+    const user = await auth.getUser(uid);
+    const existing = user.customClaims?.role as string | undefined;
 
-  await adminAuth().setCustomUserClaims(uid, { role });
-  return Response.json({ role });
+    if (existing === role) {
+      return Response.json({ role }); // ідемпотентно
+    }
+    if (existing) {
+      return Response.json(
+        { error: "Роль уже призначена й не може бути змінена." },
+        { status: 409 }
+      );
+    }
+
+    await auth.setCustomUserClaims(uid, { role });
+    return Response.json({ role });
+  } catch (err) {
+    // Помилки конфігурації сервера — не секрети, а підказки, чого бракує.
+    console.error("[set-role]", err);
+    const message =
+      err instanceof Error ? err.message : "Невідома помилка сервера.";
+    return Response.json({ error: message }, { status: 500 });
+  }
 }
