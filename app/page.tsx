@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
 
 export default function Home() {
   return (
@@ -15,12 +14,12 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" render={<Link href="/catalog" />}>
+        <ButtonLink href="/catalog" size="lg">
           Знайти репетитора
-        </Button>
-        <Button size="lg" variant="outline" render={<Link href="/login" />}>
+        </ButtonLink>
+        <ButtonLink href="/login" size="lg" variant="outline">
           Увійти
-        </Button>
+        </ButtonLink>
       </div>
     </main>
   );

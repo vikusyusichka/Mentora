@@ -13,8 +13,15 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { SlotList } from "@/components/tutor/slot-list";
+import { ButtonLink } from "@/components/ui/button-link";
+import { materializeSlots, type MaterializedSlot } from "@/lib/availability";
+import {
+  getAvailability,
+  getSlotExceptions,
+} from "@/lib/firebase/availability-repo";
 import { getPublicTutorProfile } from "@/lib/firebase/tutor-profile-repo";
+import { dateKeyInZone } from "@/lib/timezone";
 import {
   CEFR_LEVELS,
   FORMAT_LABELS,
@@ -33,6 +40,40 @@ const loadProfile = cache(
 );
 
 type PageProps = { params: Promise<{ tutorId: string }> };
+
+/** Горизонт публічного календаря. */
+const SLOTS_DAYS = 14;
+
+/**
+ * Вільні слоти на найближчі два тижні.
+ *
+ * Розгортання шаблону відбувається на сервері й дає UTC-моменти — вони
+ * однакові для всіх. Перевести їх у час глядача може лише браузер, тому
+ * далі це робить клієнтський `SlotList`.
+ */
+async function loadUpcomingSlots(
+  tutorId: string,
+  timezone: string
+): Promise<MaterializedSlot[]> {
+  const availability = await getAvailability(tutorId);
+  if (!availability || availability.weeklySlots.length === 0) return [];
+
+  const now = new Date();
+  const until = new Date(now.getTime() + SLOTS_DAYS * 86_400_000);
+  const exceptions = await getSlotExceptions(
+    tutorId,
+    dateKeyInZone(now, timezone),
+    dateKeyInZone(until, timezone)
+  );
+
+  return materializeSlots({
+    availability,
+    exceptions,
+    timezone,
+    from: now,
+    days: SLOTS_DAYS,
+  });
+}
 
 /** Опис для пошуку й для картки при розшарюванні — перше речення біо. */
 function shareDescription(profile: TutorProfile): string {
@@ -86,6 +127,7 @@ export default async function TutorPublicProfilePage({ params }: PageProps) {
 
   const levels = CEFR_LEVELS.filter((l) => profile.levelsTaught.includes(l));
   const hasTrial = profile.trialPrice > 0;
+  const slots = await loadUpcomingSlots(tutorId, profile.timezone);
 
   return (
     <div className="mx-auto w-full max-w-content-max px-6 py-10 lg:py-14">
@@ -202,6 +244,11 @@ export default async function TutorPublicProfilePage({ params }: PageProps) {
               </div>
             </div>
           </section>
+
+          <section className="rounded-card border border-border bg-card p-6 shadow-level1 sm:p-8">
+            <h2 className="text-title-lg mb-5">Вільний час</h2>
+            <SlotList slots={slots} tutorTimeZone={profile.timezone} />
+          </section>
         </article>
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -221,13 +268,13 @@ export default async function TutorPublicProfilePage({ params }: PageProps) {
               </p>
             )}
 
-            <Button
+            <ButtonLink
+              href="/register"
               size="lg"
               className="mt-6 w-full rounded-full"
-              render={<Link href="/register" />}
             >
               Створити акаунт
-            </Button>
+            </ButtonLink>
             <p className="text-label-sm mt-3 text-center text-outline">
               Бронювання слотів і оплата зʼявляться найближчим часом.
             </p>

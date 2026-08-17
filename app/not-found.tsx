@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { Compass } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
 
 /**
  * 404 для всього застосунку. Сторінки публічної частини (каталог, профілі)
@@ -22,17 +21,12 @@ export default function NotFound() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" className="rounded-full" render={<Link href="/catalog" />}>
+        <ButtonLink href="/catalog" size="lg" className="rounded-full">
           До каталогу
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="rounded-full"
-          render={<Link href="/" />}
-        >
+        </ButtonLink>
+        <ButtonLink href="/" size="lg" variant="outline" className="rounded-full">
           На головну
-        </Button>
+        </ButtonLink>
       </div>
     </main>
   );

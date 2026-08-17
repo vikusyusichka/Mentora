@@ -91,6 +91,52 @@ service cloud.firestore {
         && serverFieldsUnchanged();
 
       allow delete: if false; // знімається з публікації через isPublished
+
+      // ── розклад доступності (B.1) ────────────────────────
+      // Читають і гості: з цих даних будується публічний календар вільних
+      // слотів. Але лише для опублікованих профілів — інакше чернетка
+      // видавала б себе через власний розклад.
+      function tutorIsPublished() {
+        return exists(/databases/$(database)/documents/tutorProfiles/$(tutorId))
+          && get(/databases/$(database)/documents/tutorProfiles/$(tutorId))
+             .data.isPublished == true;
+      }
+
+      function validAvailability() {
+        return request.resource.data.weeklySlots is list
+          && request.resource.data.weeklySlots.size() <= 200
+          && request.resource.data.lessonDurationMin is number
+          && request.resource.data.lessonDurationMin > 0
+          && request.resource.data.lessonDurationMin <= 600
+          && request.resource.data.bufferMin is number
+          && request.resource.data.bufferMin >= 0
+          && request.resource.data.bufferMin <= 240;
+      }
+
+      function validException() {
+        return request.resource.data.blocked is list
+          && request.resource.data.blocked.size() <= 100
+          && request.resource.data.extra is list
+          && request.resource.data.extra.size() <= 50;
+      }
+
+      match /availability/{docId} {
+        allow read: if isSelf(tutorId) || tutorIsPublished();
+        allow create, update: if isSelf(tutorId)
+          && hasRole('tutor')
+          && validAvailability();
+        allow delete: if isSelf(tutorId) && hasRole('tutor');
+      }
+
+      // Ключ документа — дата YYYY-MM-DD у таймзоні репетитора.
+      match /slotExceptions/{date} {
+        allow read: if isSelf(tutorId) || tutorIsPublished();
+        allow create, update: if isSelf(tutorId)
+          && hasRole('tutor')
+          && validException();
+        // Видалення = «скасувати виняток», штатна дія.
+        allow delete: if isSelf(tutorId) && hasRole('tutor');
+      }
     }
 
     // Решта колекцій закриті за замовчуванням — правила додаються по блоках плану.

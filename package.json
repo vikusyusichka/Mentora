@@ -13,6 +13,7 @@
     "emulators": "firebase emulators:start",
     "emulators:dev": "concurrently -n emu,next -c blue,green \"firebase emulators:start\" \"next dev\"",
     "functions:build": "npm --prefix functions run build",
+    "test": "vitest run tests/unit",
     "test:rules": "firebase emulators:exec --only firestore \"npx vitest run\""
   },
   "dependencies": {

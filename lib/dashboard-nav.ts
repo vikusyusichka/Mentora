@@ -39,7 +39,7 @@ export const DASHBOARD_NAV: Record<Role, RoleNav> = {
     items: [
       { label: "Огляд", href: "/tutor", icon: LayoutDashboard },
       { label: "Профіль", href: "/tutor/profile", icon: UserRound },
-      { label: "Розклад", href: "/tutor", icon: CalendarDays, soon: true },
+      { label: "Розклад", href: "/tutor/schedule", icon: CalendarDays },
       { label: "Мої учні", href: "/tutor", icon: Users, soon: true },
     ],
     action: { label: "Переглянути каталог", href: "/catalog" },

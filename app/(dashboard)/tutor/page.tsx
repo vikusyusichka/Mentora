@@ -17,9 +17,10 @@ const SECTIONS: DashboardSection[] = [
     description: "Мови, рівні, ціна й біо. Публікація в каталозі.",
   },
   {
+    href: "/tutor/schedule",
     icon: CalendarDays,
     title: "Розклад",
-    description: "Слоти доступності та бронювання (Фаза B).",
+    description: "Коли вам зручно вести заняття. Учні бачать цей час у своєму поясі.",
   },
   {
     icon: Users,

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, UserRound, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
 import { logout } from "@/lib/firebase/auth-helpers";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { DASHBOARD_NAV, type NavItem } from "@/lib/dashboard-nav";
@@ -159,13 +160,14 @@ function Sidebar({
       </ul>
 
       <div className="mt-auto space-y-2 pt-8">
-        <Button
-          className="text-label-md w-full rounded-full"
+        <ButtonLink
+          href={nav.action.href}
+          onClick={onNavigate}
           size="lg"
-          render={<Link href={nav.action.href} onClick={onNavigate} />}
+          className="text-label-md w-full rounded-full"
         >
           {nav.action.label}
-        </Button>
+        </ButtonLink>
 
         <button
           type="button"

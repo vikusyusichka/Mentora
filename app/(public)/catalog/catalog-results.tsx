@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Loader2, SearchX } from "lucide-react";
 
 import { TutorCard } from "@/components/tutor/tutor-card";
 import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
 import {
   fetchCatalogPage,
   type CatalogCursor,
@@ -66,13 +66,9 @@ export function CatalogResults({
             : "Каталог поки порожній — репетитори ще не опублікували профілі."}
         </p>
         {filtersActive && (
-          <Button
-            className="mt-6 rounded-full"
-            size="lg"
-            render={<Link href="/catalog" />}
-          >
+          <ButtonLink href="/catalog" size="lg" className="mt-6 rounded-full">
             Скинути фільтри
-          </Button>
+          </ButtonLink>
         )}
       </div>
     );

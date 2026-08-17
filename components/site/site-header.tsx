@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button-link";
 
 /**
  * Шапка публічної частини (каталог, профіль репетитора).
@@ -19,26 +19,23 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-2 sm:gap-3">
-          <Button
+          <ButtonLink
+            href="/catalog"
             variant="ghost"
             className="text-label-md rounded-full text-secondary"
-            render={<Link href="/catalog" />}
           >
             Каталог
-          </Button>
-          <Button
+          </ButtonLink>
+          <ButtonLink
+            href="/login"
             variant="ghost"
             className="text-label-md hidden rounded-full text-secondary sm:inline-flex"
-            render={<Link href="/login" />}
           >
             Увійти
-          </Button>
-          <Button
-            className="text-label-md rounded-full px-5"
-            render={<Link href="/register" />}
-          >
+          </ButtonLink>
+          <ButtonLink href="/register" className="text-label-md rounded-full px-5">
             Реєстрація
-          </Button>
+          </ButtonLink>
         </nav>
       </div>
     </header>
