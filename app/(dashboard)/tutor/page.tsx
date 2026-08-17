@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, UserRound, Users } from "lucide-react";
+import { CalendarDays, UserRound, Users, Wallet } from "lucide-react";
 
 import { AuthGate } from "@/components/auth/auth-gate";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -21,6 +21,12 @@ const SECTIONS: DashboardSection[] = [
     icon: CalendarDays,
     title: "Розклад",
     description: "Коли вам зручно вести заняття. Учні бачать цей час у своєму поясі.",
+  },
+  {
+    href: "/tutor/payouts",
+    icon: Wallet,
+    title: "Виплати",
+    description: "Підключіть рахунок — без нього учні не зможуть оплатити урок.",
   },
   {
     icon: Users,

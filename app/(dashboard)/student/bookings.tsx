@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { CalendarClock, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 import {
   BOOKING_STATUS_LABELS,
@@ -30,6 +33,40 @@ export function StudentBookings() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingWithId[] | null>(null);
   const [tutorNames, setTutorNames] = useState<Record<string, string>>({});
+  const [payingId, setPayingId] = useState<string | null>(null);
+
+  /**
+   * Оплата — це перехід на сторінку провайдера. Підтвердження броні
+   * прийде окремо, вебхуком: повернення учня в браузері нічого не
+   * підтверджує й підтверджувати не має.
+   */
+  async function pay(bookingId: string) {
+    if (!user) return;
+    setPayingId(bookingId);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ bookingId }),
+      });
+      const data = (await response.json()) as { url?: string; error?: string };
+
+      if (!response.ok || !data.url) {
+        toast.error(data.error ?? "Не вдалося перейти до оплати.");
+        setPayingId(null);
+        return;
+      }
+      window.location.assign(data.url);
+    } catch (err) {
+      console.error(err);
+      toast.error("Не вдалося звʼязатися з сервером.");
+      setPayingId(null);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -128,6 +165,19 @@ export function StudentBookings() {
                 >
                   {BOOKING_STATUS_LABELS[booking.status]}
                 </span>
+                {booking.status === "pending_payment" && (
+                  <Button
+                    size="lg"
+                    className="rounded-full"
+                    onClick={() => pay(booking.id)}
+                    disabled={payingId !== null}
+                  >
+                    {payingId === booking.id && (
+                      <Loader2 className="size-4 animate-spin" />
+                    )}
+                    Оплатити
+                  </Button>
+                )}
               </div>
             </div>
           </li>

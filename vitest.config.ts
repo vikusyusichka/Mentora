@@ -7,6 +7,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL(".", import.meta.url)),
+      // Серверні модулі тестуються в Node, а `server-only` навмисно кидає
+      // помилку при звичайному імпорті — підміняємо порожнім модулем.
+      "server-only": fileURLToPath(
+        new URL("./tests/stubs/empty.ts", import.meta.url)
+      ),
     },
   },
   test: {

@@ -85,7 +85,16 @@ export type TutorProfileInput = z.infer<typeof tutorProfileSchema>;
 export interface TutorProfile extends TutorProfileInput {
   ratingAvg: number;
   ratingCount: number;
+  /** Акаунт у платіжного провайдера. Пише лише сервер. */
   payoutAccountId?: string;
+  /**
+   * У якого саме провайдера цей акаунт. Зберігається поруч, бо ринок у нас
+   * і міжнародний, і український: репетитори з різних країн неминуче
+   * працюють через різні провайдери. Пише лише сервер.
+   */
+  payoutProvider?: "stripe" | "wayforpay";
+  /** Чи завершив репетитор онбординг і чи може приймати платежі. */
+  payoutsEnabled?: boolean;
   isPublished: boolean;
 }
 

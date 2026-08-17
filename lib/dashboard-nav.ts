@@ -6,6 +6,7 @@ import {
   LineChart,
   UserRound,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/types";
@@ -40,6 +41,7 @@ export const DASHBOARD_NAV: Record<Role, RoleNav> = {
       { label: "Огляд", href: "/tutor", icon: LayoutDashboard },
       { label: "Профіль", href: "/tutor/profile", icon: UserRound },
       { label: "Розклад", href: "/tutor/schedule", icon: CalendarDays },
+      { label: "Виплати", href: "/tutor/payouts", icon: Wallet },
       { label: "Мої учні", href: "/tutor", icon: Users, soon: true },
     ],
     action: { label: "Переглянути каталог", href: "/catalog" },

@@ -44,7 +44,11 @@ service cloud.firestore {
         return request.resource.data.ratingAvg == resource.data.ratingAvg
           && request.resource.data.ratingCount == resource.data.ratingCount
           && request.resource.data.get('payoutAccountId', null)
-             == resource.data.get('payoutAccountId', null);
+             == resource.data.get('payoutAccountId', null)
+          && request.resource.data.get('payoutProvider', null)
+             == resource.data.get('payoutProvider', null)
+          && request.resource.data.get('payoutsEnabled', null)
+             == resource.data.get('payoutsEnabled', null);
       }
 
       function validProfile() {
@@ -83,7 +87,9 @@ service cloud.firestore {
         && validProfile()
         && request.resource.data.ratingAvg == 0
         && request.resource.data.ratingCount == 0
-        && !request.resource.data.keys().hasAny(['payoutAccountId']);
+        && !request.resource.data.keys().hasAny(
+             ['payoutAccountId', 'payoutProvider', 'payoutsEnabled']
+           );
 
       allow update: if isSelf(tutorId)
         && hasRole('tutor')
@@ -151,6 +157,21 @@ service cloud.firestore {
     // закритий повністю: ані статус, ані суми, ані комісія не мають
     // залежати від того, що надішле браузер.
     match /bookings/{bookingId} {
+      function isParticipant() {
+        return isSignedIn()
+          && (resource.data.studentUserId == request.auth.uid
+              || resource.data.tutorId == request.auth.uid);
+      }
+
+      allow get: if isParticipant();
+      allow list: if isParticipant();
+      allow write: if false;
+    }
+
+    // ── payments ───────────────────────────────────────────
+    // Пише лише сервер (вебхук провайдера). Учасники бачать свій платіж —
+    // це потрібно, щоб показати статус оплати в кабінеті.
+    match /payments/{paymentId} {
       function isParticipant() {
         return isSignedIn()
           && (resource.data.studentUserId == request.auth.uid
