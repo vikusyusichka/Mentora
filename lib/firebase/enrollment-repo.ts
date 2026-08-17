@@ -1,5 +1,7 @@
 import {
+  addDoc,
   collection,
+  deleteDoc,
   doc,
   limit,
   onSnapshot,
@@ -14,6 +16,9 @@ import { db } from "@/lib/firebase/client";
 import type {
   Enrollment,
   EnrollmentWithId,
+  Homework,
+  HomeworkStatus,
+  HomeworkWithId,
   Lesson,
   LessonStatus,
   LessonWithId,
@@ -133,4 +138,70 @@ export function setLessonStatus(
     doc(db, "students", enrollmentId, "lessons", lessonId),
     { status }
   );
+}
+
+// ── Домашні завдання (Блок C.2) ───────────────────────────────────────
+//
+// На відміну від звіту, ДЗ не чіпає лічильників, тож пишеться з клієнта
+// напряму — правила вже стежать, хто що може: репетитор веде завдання,
+// учень міняє лише `status` і `submissionFileUrl`, батьки читають.
+
+export function subscribeHomework(
+  enrollmentId: string,
+  onChange: (homework: HomeworkWithId[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    query(
+      collection(db, "students", enrollmentId, "homework"),
+      orderBy("deadline", "desc"),
+      limit(100)
+    ),
+    (snapshot) => {
+      onChange(
+        snapshot.docs.map((snap) => ({
+          id: snap.id,
+          ...(snap.data() as Homework),
+        }))
+      );
+    },
+    onError
+  );
+}
+
+export function createHomework(
+  enrollmentId: string,
+  input: { text: string; deadline: string; lessonId?: string | null }
+): Promise<unknown> {
+  const homework: Homework = {
+    text: input.text.trim(),
+    deadline: input.deadline,
+    status: "assigned",
+    submissionFileUrl: "",
+    lessonId: input.lessonId ?? null,
+    createdAt: new Date().toISOString(),
+  };
+  return addDoc(collection(db, "students", enrollmentId, "homework"), homework);
+}
+
+export function deleteHomework(
+  enrollmentId: string,
+  homeworkId: string
+): Promise<void> {
+  return deleteDoc(doc(db, "students", enrollmentId, "homework", homeworkId));
+}
+
+/**
+ * Здача завдання учнем. Свідомо приймає лише ці два поля — рівно те, що
+ * дозволяють правила: ані текст, ані дедлайн учень змінити не може.
+ */
+export function submitHomework(
+  enrollmentId: string,
+  homeworkId: string,
+  patch: { status: HomeworkStatus; submissionFileUrl?: string }
+): Promise<void> {
+  return updateDoc(doc(db, "students", enrollmentId, "homework", homeworkId), {
+    status: patch.status,
+    submissionFileUrl: patch.submissionFileUrl ?? "",
+  });
 }

@@ -65,6 +65,39 @@ export interface LessonWithId extends Lesson {
   enrollmentId: string;
 }
 
+export const HOMEWORK_STATUSES = ["assigned", "done"] as const;
+export type HomeworkStatus = (typeof HOMEWORK_STATUSES)[number];
+
+export const HOMEWORK_STATUS_LABELS: Record<HomeworkStatus, string> = {
+  assigned: "Задано",
+  done: "Виконано",
+};
+
+export interface Homework {
+  text: string;
+  /** `YYYY-MM-DD` — дедлайн це доба, а не момент, тож зона тут не потрібна. */
+  deadline: string;
+  status: HomeworkStatus;
+  /**
+   * Посилання на виконане. Саме посилання, а не файл: Cloud Storage
+   * вимагає платного плану — те саме обхідне рішення, що й для фото профілю.
+   */
+  submissionFileUrl: string;
+  /** Урок, після якого задано. `null` — завдання поза уроком. */
+  lessonId: string | null;
+  createdAt: string;
+}
+
+export interface HomeworkWithId extends Homework {
+  id: string;
+}
+
+/** Дедлайн у минулому, а завдання ще не здано. */
+export function isOverdue(homework: Homework, today = new Date()): boolean {
+  if (homework.status === "done") return false;
+  return homework.deadline < today.toISOString().slice(0, 10);
+}
+
 /**
  * Ідентифікатор enrollment детермінований — пара «репетитор + учень».
  *

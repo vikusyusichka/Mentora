@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Sparkles, XCircle } from "lucide-react";
 
 import { AuthGate } from "@/components/auth/auth-gate";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
@@ -26,8 +26,15 @@ import {
   updateEnrollmentCard,
 } from "@/lib/firebase/enrollment-repo";
 import { browserTimeZone } from "@/lib/timezone";
-import { CEFR_LEVELS, LANGUAGES, type CefrLevel, type Language } from "@/lib/tutor-profile";
+import {
+  CEFR_LEVELS,
+  LANGUAGES,
+  type CefrLevel,
+  type Language,
+} from "@/lib/tutor-profile";
 import { cn } from "@/lib/utils";
+import { HomeworkPanel } from "./homework-panel";
+import { LessonReportForm } from "./lesson-report";
 
 /** Уся історія уроків, не лише майбутні. */
 const FROM_BEGINNING = "1970-01-01T00:00:00.000Z";
@@ -42,9 +49,9 @@ const STATUS_STYLES: Record<LessonStatus, string> = {
 };
 
 function StudentCard({ enrollmentId }: { enrollmentId: string }) {
-  const [enrollment, setEnrollment] = useState<EnrollmentWithId | null | "missing">(
-    null
-  );
+  const [enrollment, setEnrollment] = useState<
+    EnrollmentWithId | null | "missing"
+  >(null);
   const [lessons, setLessons] = useState<LessonWithId[] | null>(null);
 
   useEffect(
@@ -95,10 +102,132 @@ function StudentCard({ enrollmentId }: { enrollmentId: string }) {
   }
 
   return (
-    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="space-y-8">
+        <LessonsPanel enrollmentId={enrollmentId} lessons={lessons} />
+        <HomeworkPanel enrollmentId={enrollmentId} />
+      </div>
       <CardForm enrollment={enrollment} />
-      <LessonsPanel enrollmentId={enrollmentId} lessons={lessons} />
     </div>
+  );
+}
+
+function LessonsPanel({
+  enrollmentId,
+  lessons,
+}: {
+  enrollmentId: string;
+  lessons: LessonWithId[] | null;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [reportFor, setReportFor] = useState<string | null>(null);
+
+  async function change(lessonId: string, status: LessonStatus) {
+    setBusyId(lessonId);
+    try {
+      await setLessonStatus(enrollmentId, lessonId, status);
+    } catch (err) {
+      console.error(err);
+      toast.error("Не вдалося змінити статус уроку.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <section className="rounded-card border border-border bg-card p-6 shadow-level1 sm:p-8">
+      <h2 className="text-title-lg mb-5">Уроки</h2>
+
+      {lessons === null ? (
+        <p className="text-label-md flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          Завантажуємо…
+        </p>
+      ) : lessons.length === 0 ? (
+        <p className="text-body-md text-muted-foreground">Уроків ще немає.</p>
+      ) : (
+        <ul className="space-y-4">
+          {[...lessons].reverse().map((lesson) => (
+            <li
+              key={lesson.id}
+              className="rounded-input border border-border p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-label-md text-secondary">
+                  {formatLesson(lesson.slotStart)}
+                </span>
+                <span
+                  className={cn(
+                    "text-label-sm rounded-full px-3 py-1",
+                    STATUS_STYLES[lesson.status]
+                  )}
+                >
+                  {LESSON_STATUS_LABELS[lesson.status]}
+                </span>
+              </div>
+
+              {lesson.report && reportFor !== lesson.id && (
+                <div className="text-body-md mt-3 space-y-1 rounded-input bg-search-field/60 p-3">
+                  <p className="text-secondary">{lesson.report.topic}</p>
+                  <p className="text-label-md text-muted-foreground">
+                    Нових слів: {lesson.report.newWordsCount}
+                    {lesson.report.speakingPractice && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-sage-green">
+                        <Sparkles className="size-3.5" strokeWidth={2} aria-hidden />
+                        розмовна практика
+                      </span>
+                    )}
+                  </p>
+                  {lesson.report.noteForStudent && (
+                    <p className="text-label-md whitespace-pre-line text-muted-foreground">
+                      {lesson.report.noteForStudent}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {reportFor === lesson.id ? (
+                <LessonReportForm
+                  enrollmentId={enrollmentId}
+                  lesson={lesson}
+                  onDone={() => setReportFor(null)}
+                />
+              ) : (
+                lesson.status !== "cancelled" && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant={lesson.report ? "ghost" : "default"}
+                      className="rounded-full"
+                      onClick={() => setReportFor(lesson.id)}
+                    >
+                      <FileText className="size-3.5" strokeWidth={2} />
+                      {lesson.report ? "Змінити звіт" : "Провести урок"}
+                    </Button>
+
+                    {/* «Проведено» окремою кнопкою немає навмисно: урок
+                        закривається звітом, і тоді «проведено уроків»
+                        завжди дорівнює кількості звітів. */}
+                    {lesson.status === "scheduled" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full text-muted-foreground"
+                        onClick={() => change(lesson.id, "cancelled")}
+                        disabled={busyId === lesson.id}
+                      >
+                        <XCircle className="size-3.5" strokeWidth={2} />
+                        Скасувати
+                      </Button>
+                    )}
+                  </div>
+                )
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -136,185 +265,104 @@ function CardForm({ enrollment }: { enrollment: EnrollmentWithId }) {
   }
 
   return (
-    <section className="rounded-card border border-border bg-card p-6 shadow-level1 sm:p-8">
-      <h2 className="text-title-lg mb-6">Картка учня</h2>
+    <aside className="xl:sticky xl:top-8 xl:self-start">
+      <section className="rounded-card border border-border bg-card p-6 shadow-level1">
+        <h2 className="text-title-lg mb-6">Картка учня</h2>
 
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">{"Ім'я"}</Label>
-          <Input
-            id="name"
-            className="h-10 rounded-input bg-card"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-
-        <ChipToggleGroup
-          label="Мови"
-          options={LANGUAGES}
-          selected={languages}
-          onToggle={(value: Language) =>
-            setLanguages((prev) =>
-              prev.includes(value)
-                ? prev.filter((v) => v !== value)
-                : [...prev, value]
-            )
-          }
-        />
-
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="currentLevel">Поточний рівень</Label>
-            <select
-              id="currentLevel"
-              className={selectClass}
-              value={currentLevel}
-              onChange={(e) => setCurrentLevel(e.target.value as CefrLevel | "")}
-            >
-              <option value="">Не вказано</option>
-              {CEFR_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
+            <Label htmlFor="name">{"Ім'я"}</Label>
+            <Input
+              id="name"
+              className="h-10 rounded-input bg-card"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <ChipToggleGroup
+            label="Мови"
+            options={LANGUAGES}
+            selected={languages}
+            onToggle={(value: Language) =>
+              setLanguages((prev) =>
+                prev.includes(value)
+                  ? prev.filter((v) => v !== value)
+                  : [...prev, value]
+              )
+            }
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="currentLevel">Поточний рівень</Label>
+              <select
+                id="currentLevel"
+                className={selectClass}
+                value={currentLevel}
+                onChange={(e) => setCurrentLevel(e.target.value as CefrLevel | "")}
+              >
+                <option value="">Не вказано</option>
+                {CEFR_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="goalLevel">Цільовий рівень</Label>
+              <select
+                id="goalLevel"
+                className={selectClass}
+                value={goalLevel}
+                onChange={(e) => setGoalLevel(e.target.value as CefrLevel | "")}
+              >
+                <option value="">Не вказано</option>
+                {CEFR_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="goalLevel">Цільовий рівень</Label>
-            <select
-              id="goalLevel"
-              className={selectClass}
-              value={goalLevel}
-              onChange={(e) => setGoalLevel(e.target.value as CefrLevel | "")}
-            >
-              <option value="">Не вказано</option>
-              {CEFR_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
+            <Label htmlFor="goalText">Ціль</Label>
+            <Textarea
+              id="goalText"
+              rows={3}
+              placeholder="Наприклад: співбесіда англійською до грудня"
+              value={goalText}
+              onChange={(e) => setGoalText(e.target.value)}
+            />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="goalText">Ціль</Label>
-          <Textarea
-            id="goalText"
-            rows={3}
-            placeholder="Наприклад: співбесіда англійською до грудня"
-            value={goalText}
-            onChange={(e) => setGoalText(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4">
           <Button
             size="lg"
-            className="rounded-full"
+            className="w-full rounded-full"
             onClick={save}
             disabled={saving}
           >
             {saving && <Loader2 className="size-4 animate-spin" />}
             Зберегти картку
           </Button>
-          <span className="text-label-sm text-outline">
-            Проведено уроків: {enrollment.lessonsCount} · нових слів:{" "}
-            {enrollment.totalNewWords}
-          </span>
+
+          <div className="rounded-input bg-beige-card p-4">
+            <p className="text-label-md text-secondary">
+              Проведено уроків: {enrollment.lessonsCount}
+            </p>
+            <p className="text-label-md text-secondary">
+              Усього нових слів: {enrollment.totalNewWords}
+            </p>
+            <p className="text-label-sm mt-2 text-outline">
+              Рахується зі звітів після уроків.
+            </p>
+          </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function LessonsPanel({
-  enrollmentId,
-  lessons,
-}: {
-  enrollmentId: string;
-  lessons: LessonWithId[] | null;
-}) {
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  async function change(lessonId: string, status: LessonStatus) {
-    setBusyId(lessonId);
-    try {
-      await setLessonStatus(enrollmentId, lessonId, status);
-    } catch (err) {
-      console.error(err);
-      toast.error("Не вдалося змінити статус уроку.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  return (
-    <aside className="xl:sticky xl:top-8 xl:self-start">
-      <div className="rounded-card border border-border bg-card p-6 shadow-level1">
-        <h2 className="text-title-lg mb-5">Уроки</h2>
-
-        {lessons === null ? (
-          <p className="text-label-md flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
-            Завантажуємо…
-          </p>
-        ) : lessons.length === 0 ? (
-          <p className="text-body-md text-muted-foreground">
-            Уроків ще немає.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {[...lessons].reverse().map((lesson) => (
-              <li
-                key={lesson.id}
-                className="rounded-input border border-border p-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-label-md text-secondary">
-                    {formatLesson(lesson.slotStart)}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-label-sm rounded-full px-3 py-1",
-                      STATUS_STYLES[lesson.status]
-                    )}
-                  >
-                    {LESSON_STATUS_LABELS[lesson.status]}
-                  </span>
-                </div>
-
-                {lesson.status === "scheduled" && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-full"
-                      onClick={() => change(lesson.id, "done")}
-                      disabled={busyId === lesson.id}
-                    >
-                      <CheckCircle2 className="size-3.5" strokeWidth={2} />
-                      Проведено
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-full text-muted-foreground"
-                      onClick={() => change(lesson.id, "cancelled")}
-                      disabled={busyId === lesson.id}
-                    >
-                      <XCircle className="size-3.5" strokeWidth={2} />
-                      Скасувати
-                    </Button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      </section>
     </aside>
   );
 }
@@ -336,7 +384,7 @@ export default function TutorStudentCardPage() {
     <AuthGate allow={["tutor"]}>
       <DashboardLayout
         title="Учень"
-        description="Рівень, ціль і уроки. Зміни бачить учень одразу."
+        description="Уроки, звіти й домашні завдання. Зміни учень бачить одразу."
       >
         <Link
           href="/tutor/students"
