@@ -75,7 +75,7 @@
         { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
         { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
       ]
-    }
+    },
     {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
