@@ -147,6 +147,38 @@ describe("tutorProfiles — створення", () => {
       )
     );
   });
+
+  it("приймає теги каталогу в межах ліміту", async () => {
+    await assertSucceeds(
+      setDoc(
+        doc(asTutor("olena"), "tutorProfiles/olena"),
+        profileData({
+          filterTags: ["l:Англійська", "v:B1", "l:Англійська~v:B1~f:online"],
+          cityKey: null,
+        })
+      )
+    );
+  });
+
+  it("відхиляє роздутий filterTags (спроба потрапити в кожну видачу)", async () => {
+    await assertFails(
+      setDoc(
+        doc(asTutor("olena"), "tutorProfiles/olena"),
+        profileData({
+          filterTags: Array.from({ length: 401 }, (_, i) => `spam:${i}`),
+        })
+      )
+    );
+  });
+
+  it("відхиляє filterTags не-списком", async () => {
+    await assertFails(
+      setDoc(
+        doc(asTutor("olena"), "tutorProfiles/olena"),
+        profileData({ filterTags: "l:Англійська" })
+      )
+    );
+  });
 });
 
 describe("tutorProfiles — читання", () => {

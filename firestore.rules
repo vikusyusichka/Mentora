@@ -58,7 +58,18 @@ service cloud.firestore {
           && request.resource.data.pricePerLesson is number
           && request.resource.data.pricePerLesson > 0
           && request.resource.data.format in ['online', 'offline', 'both']
-          && request.resource.data.isPublished is bool;
+          && request.resource.data.isPublished is bool
+          && validFilterTags();
+      }
+
+      // filterTags — денормалізація мова×рівень×формат під фільтри каталогу
+      // (див. lib/catalog.ts). Поле пише клієнт, тож обмежуємо його розмір:
+      // інакше репетитор міг би напхати тегів і потрапляти в кожну видачу,
+      // а заразом роздути документ і його індексні записи.
+      // Стеля 400 із запасом: максимум за формою — 8·7·3−1 = 167.
+      function validFilterTags() {
+        return request.resource.data.get('filterTags', []) is list
+          && request.resource.data.get('filterTags', []).size() <= 400;
       }
 
       // Гість бачить лише опубліковані; власник бачить і свою чернетку.

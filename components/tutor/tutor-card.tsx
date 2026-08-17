@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin, Monitor, Star, UserRound } from "lucide-react";
 import {
   FORMAT_LABELS,
@@ -6,16 +7,32 @@ import {
   levelsRange,
   type TutorProfile,
 } from "@/lib/tutor-profile";
+import { cn } from "@/lib/utils";
 
 /**
  * Публічна картка репетитора — так профіль бачить гість.
  * Використовується для прев'ю в кабінеті (A.1) і в каталозі (A.2).
+ *
+ * `href` перетворює картку на посилання цілком: у каталозі клікабельною має
+ * бути вся площа, а в прев'ю профілю вести нікуди не треба.
  */
-export function TutorCard({ profile }: { profile: TutorProfile }) {
+export function TutorCard({
+  profile,
+  href,
+}: {
+  profile: TutorProfile;
+  href?: string;
+}) {
   const hasTrial = profile.trialPrice > 0;
 
-  return (
-    <article className="rounded-card border border-border bg-card p-6 shadow-level1">
+  const card = (
+    <article
+      className={cn(
+        "h-full rounded-card border border-border bg-card p-6 shadow-level1",
+        href &&
+          "transition-all hover:-translate-y-1 hover:shadow-level1-hover"
+      )}
+    >
       <div className="flex items-start gap-4">
         {profile.photoURL ? (
           <Image
@@ -95,5 +112,16 @@ export function TutorCard({ profile }: { profile: TutorProfile }) {
         <span className="text-label-md text-muted-foreground">за урок</span>
       </footer>
     </article>
+  );
+
+  if (!href) return card;
+
+  return (
+    <Link
+      href={href}
+      className="block rounded-card focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gold/40"
+    >
+      {card}
+    </Link>
   );
 }

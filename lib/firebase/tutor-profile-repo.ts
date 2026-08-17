@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase/client";
+import { buildFilterTags, cityKeyOf } from "@/lib/catalog";
 import type { TutorProfile, TutorProfileInput } from "@/lib/tutor-profile";
 
 const COLLECTION = "tutorProfiles";
@@ -10,6 +11,40 @@ export async function getTutorProfile(
 ): Promise<TutorProfile | null> {
   const snap = await getDoc(doc(db, COLLECTION, tutorId));
   return snap.exists() ? (snap.data() as TutorProfile) : null;
+}
+
+/**
+ * Профіль для публічної сторінки. Повертає `null` і коли документа немає,
+ * і коли він не опублікований: у другому випадку Security Rules самі
+ * відхиляють читання, і для гостя ці два стани нерозрізненні за задумом —
+ * чернетка не має «світитися» навіть фактом свого існування.
+ */
+export async function getPublicTutorProfile(
+  tutorId: string
+): Promise<TutorProfile | null> {
+  try {
+    const snap = await getDoc(doc(db, COLLECTION, tutorId));
+    if (!snap.exists()) return null;
+    const profile = snap.data() as TutorProfile;
+    return profile.isPublished ? profile : null;
+  } catch (err) {
+    // Відмова правил на чернетці — очікуваний сценарій, але мережеві збої
+    // й проблеми конфігурації виглядають так само. Лишаємо слід у логах.
+    console.error("[tutor-profile] read", tutorId, err);
+    return null;
+  }
+}
+
+/**
+ * Поля, які існують лише заради фільтрів каталогу. Похідні від форми,
+ * тож перераховуються при кожному збереженні — інакше профіль знайдеться
+ * за старою мовою або старим містом.
+ */
+function catalogFields(input: TutorProfileInput) {
+  return {
+    filterTags: buildFilterTags(input),
+    cityKey: cityKeyOf(input.city),
+  };
 }
 
 /**
@@ -27,12 +62,13 @@ export async function saveTutorProfile(
   const existing = await getDoc(refDoc);
 
   if (existing.exists()) {
-    await updateDoc(refDoc, { ...input, isPublished });
+    await updateDoc(refDoc, { ...input, ...catalogFields(input), isPublished });
     return;
   }
 
   await setDoc(refDoc, {
     ...input,
+    ...catalogFields(input),
     isPublished,
     ratingAvg: 0,
     ratingCount: 0,

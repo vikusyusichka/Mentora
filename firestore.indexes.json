@@ -1,4 +1,81 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "cityKey", "order": "ASCENDING" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "cityKey", "order": "ASCENDING" },
+        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "currency", "order": "ASCENDING" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "currency", "order": "ASCENDING" },
+        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "cityKey", "order": "ASCENDING" },
+        { "fieldPath": "currency", "order": "ASCENDING" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "cityKey", "order": "ASCENDING" },
+        { "fieldPath": "currency", "order": "ASCENDING" },
+        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
+import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 /**
@@ -18,6 +19,7 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: "Mentora — платформа для репетиторства",
   description:
     "Маркетплейс репетиторів: обери викладача, бронюй уроки й відстежуй прогрес.",
