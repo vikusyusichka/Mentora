@@ -66,9 +66,10 @@ describe("holdIsActive", () => {
 });
 
 describe("platformFeeFor", () => {
-  it("рахує комісію цілими одиницями валюти", () => {
-    expect(platformFeeFor(500)).toBe(50);
-    expect(platformFeeFor(495)).toBe(50); // 49.5 → округлення
+  it("рахує 5% цілими одиницями валюти", () => {
+    expect(platformFeeFor(500)).toBe(25);
+    expect(platformFeeFor(480)).toBe(24);
+    expect(platformFeeFor(495)).toBe(25); // 24.75 → округлення
     expect(platformFeeFor(0)).toBe(0);
   });
 

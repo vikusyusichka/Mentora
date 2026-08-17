@@ -35,13 +35,13 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
 export const BOOKING_HOLD_MINUTES = 20;
 
 /**
- * Комісія платформи.
+ * Комісія платформи — 5% від суми уроку.
  *
- * ⚠️ Значення попереднє — остаточну ставку задає бізнес разом із вибором
- * платіжного провайдера (Блок B.3). Тут воно в одному місці саме для того,
- * щоб змінити його було одним рядком.
+ * Ставку затвердив автор проєкту. Живе однією константою, бо крім
+ * розрахунку броні знадобиться ще й при розщепленні платежу (Блок B.3):
+ * два місця з різними числами розійшлися б рано чи пізно.
  */
-export const PLATFORM_FEE_RATE = 0.1;
+export const PLATFORM_FEE_RATE = 0.05;
 
 export function platformFeeFor(amount: number): number {
   return Math.round(amount * PLATFORM_FEE_RATE);
