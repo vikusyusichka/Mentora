@@ -21,6 +21,18 @@
   --color-sage-green: #2e7d5b; /* success, прогрес, зростання */
   --color-terracotta: #d96c3f; /* попередження, помилки форм */
 
+  /* ── Відтінки з еталона maroon_theme_4 ─────────────────────
+     Зняті піксельною вибіркою зі screen.png (sharp), а не з
+     tailwind.config усередині code.html — там токени розходяться
+     з рендером (див. CONTEXT, розділ 6). */
+  --color-maroon-active: #57220e; /* активний пункт меню в сайдбарі */
+  --color-sidebar-muted: #bf966c; /* підпис ролі, неактивні пункти */
+  --color-search-field: #fef2e1; /* поле пошуку, шапка таблиці */
+  --color-beige-card: #f8ecdb; /* інформаційна картка */
+  --color-badge-pink: #fda49f; /* бейдж-акцент */
+  --color-badge-neutral: #ede1d0; /* бейдж нейтральний */
+  --color-progress-fill: #795900; /* заливка прогрес-бару */
+
   /* Material-аліаси з DESIGN.md (синоніми для сумісності з макетами) */
   --color-primary-container: var(--color-gold);
   --color-on-secondary-fixed: var(--color-deep-maroon);

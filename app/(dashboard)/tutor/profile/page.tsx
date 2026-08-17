@@ -8,7 +8,7 @@ import { Loader2, UserRound } from "lucide-react";
 import Image from "next/image";
 
 import { AuthGate } from "@/components/auth/auth-gate";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { LoadingScreen } from "@/components/loading-screen";
 import { ChipToggleGroup } from "@/components/tutor/chip-toggle";
 import { TutorCard } from "@/components/tutor/tutor-card";
@@ -441,15 +441,12 @@ function ProfileForm() {
 export default function TutorProfilePage() {
   return (
     <AuthGate allow={["tutor"]}>
-      <DashboardShell>
-        <header className="mb-8">
-          <h1 className="text-headline-lg">Профіль репетитора</h1>
-          <p className="text-body-md mt-2 text-muted-foreground">
-            Заповніть профіль, щоб учні могли знайти вас у каталозі.
-          </p>
-        </header>
+      <DashboardLayout
+        title="Профіль репетитора"
+        description="Заповніть профіль, щоб учні могли знайти вас у каталозі."
+      >
         <ProfileForm />
-      </DashboardShell>
+      </DashboardLayout>
     </AuthGate>
   );
 }
