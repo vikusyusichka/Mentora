@@ -20,19 +20,20 @@ const SECTIONS: DashboardSection[] = [
   {
     href: "/tutor/schedule",
     icon: CalendarDays,
-    title: "Розклад",
+    title: "Доступність",
     description: "Коли вам зручно вести заняття. Учні бачать цей час у своєму поясі.",
+  },
+  {
+    href: "/tutor/students",
+    icon: Users,
+    title: "Мої учні",
+    description: "Рівень, ціль і уроки кожного учня.",
   },
   {
     href: "/tutor/payouts",
     icon: Wallet,
     title: "Виплати",
     description: "Підключіть рахунок — без нього учні не зможуть оплатити урок.",
-  },
-  {
-    icon: Users,
-    title: "Мої учні",
-    description: "Прогрес, звіти після уроків, ДЗ (Фаза C).",
   },
 ];
 

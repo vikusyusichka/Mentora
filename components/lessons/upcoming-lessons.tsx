@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarClock, Loader2 } from "lucide-react";
 
 import {
   LESSON_STATUS_LABELS,
   type EnrollmentWithId,
   type LessonStatus,
-  type LessonWithId,
 } from "@/lib/enrollment";
-import {
-  getParentEnrollments,
-  getStudentEnrollments,
-  getTutorEnrollments,
-  getUpcomingLessons,
-} from "@/lib/firebase/enrollment-repo";
 import { getPublicTutorProfile } from "@/lib/firebase/tutor-profile-repo";
-import { useAuth } from "@/lib/hooks/use-auth";
+import {
+  useEnrollments,
+  useLessonsInRange,
+} from "@/lib/hooks/use-enrollments";
 import { browserTimeZone } from "@/lib/timezone";
 import type { Role } from "@/lib/types";
 
@@ -26,54 +22,24 @@ const STATUS_STYLES: Record<LessonStatus, string> = {
   cancelled: "bg-badge-neutral text-muted-foreground",
 };
 
-interface LessonRow {
-  lesson: LessonWithId;
-  counterpart: string;
-}
-
 /**
  * Найближчі заняття. Один компонент на всі три ролі: список той самий,
- * різниця лише в тому, кого показувати другою стороною — і в тому, як
- * саме роль дістає свої звʼязки.
+ * різниця лише в тому, кого показувати другою стороною.
  *
- * Рендериться за AuthGate, тобто завжди в браузері, тож час одразу
- * форматуємо в зоні глядача.
+ * Читає через підписки — статус, який репетитор змінив у картці учня,
+ * учень бачить без перезавантаження.
  */
 export function UpcomingLessons({ role }: { role: Role }) {
-  const { user } = useAuth();
-  const [rows, setRows] = useState<LessonRow[] | null>(null);
+  const { enrollments } = useEnrollments(role);
 
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
+  // Момент відліку фіксуємо один раз: інакше кожен рендер давав би нову
+  // межу проміжку й перепідписував слухачів.
+  const from = useMemo(() => new Date().toISOString(), []);
+  const lessons = useLessonsInRange(enrollments, from);
 
-    (async () => {
-      try {
-        const enrollments = await loadEnrollments(role, user.uid);
-        const lessons = await getUpcomingLessons(enrollments.map((e) => e.id));
-        if (cancelled) return;
+  const counterparts = useCounterpartNames(role, enrollments);
 
-        const counterparts = await counterpartNames(role, enrollments);
-        if (cancelled) return;
-
-        setRows(
-          lessons.map((lesson) => ({
-            lesson,
-            counterpart: counterparts[lesson.enrollmentId] ?? "—",
-          }))
-        );
-      } catch (err) {
-        console.error("[lessons] upcoming", err);
-        if (!cancelled) setRows([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, role]);
-
-  if (rows === null) {
+  if (lessons === null) {
     return (
       <p className="text-label-md flex items-center gap-2 text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
@@ -82,7 +48,7 @@ export function UpcomingLessons({ role }: { role: Role }) {
     );
   }
 
-  if (rows.length === 0) {
+  if (lessons.length === 0) {
     return (
       <p className="text-body-md text-muted-foreground">
         {role === "tutor"
@@ -105,7 +71,7 @@ export function UpcomingLessons({ role }: { role: Role }) {
   return (
     <div className="space-y-3">
       <ul className="space-y-3">
-        {rows.map(({ lesson, counterpart }) => (
+        {lessons.map((lesson) => (
           <li
             key={`${lesson.enrollmentId}/${lesson.id}`}
             className="rounded-input border border-border bg-card p-4"
@@ -117,7 +83,7 @@ export function UpcomingLessons({ role }: { role: Role }) {
                   {formatter.format(new Date(lesson.slotStart))}
                 </p>
                 <p className="text-label-sm mt-1 text-muted-foreground">
-                  {counterpart} · {lesson.durationMin} хв
+                  {counterparts[lesson.enrollmentId] ?? "—"} · {lesson.durationMin} хв
                 </p>
               </div>
 
@@ -138,33 +104,44 @@ export function UpcomingLessons({ role }: { role: Role }) {
   );
 }
 
-function loadEnrollments(role: Role, uid: string): Promise<EnrollmentWithId[]> {
-  if (role === "tutor") return getTutorEnrollments(uid);
-  if (role === "student") return getStudentEnrollments(uid);
-  return getParentEnrollments(uid);
-}
-
 /**
- * Кого показувати другою стороною: репетитору — учня (ім'я вже лежить
- * в enrollment), учневі й батькам — репетитора (ім'я читається з його
+ * Кого показувати другою стороною: репетитору — учня (імʼя вже лежить
+ * у звʼязку), учневі й батькам — репетитора (імʼя читається з його
  * публічного профілю).
  */
-async function counterpartNames(
+function useCounterpartNames(
   role: Role,
-  enrollments: readonly EnrollmentWithId[]
-): Promise<Record<string, string>> {
+  enrollments: EnrollmentWithId[] | null
+): Record<string, string> {
+  const [names, setNames] = useState<Record<string, string>>({});
+  const tutorIds = (enrollments ?? []).map((e) => e.tutorId).join(",");
+
+  useEffect(() => {
+    if (role === "tutor" || !enrollments || enrollments.length === 0) return;
+    let cancelled = false;
+
+    (async () => {
+      const profiles = await Promise.all(
+        enrollments.map((e) => getPublicTutorProfile(e.tutorId))
+      );
+      if (cancelled) return;
+      setNames(
+        Object.fromEntries(
+          enrollments.map((e, index) => [
+            e.id,
+            profiles[index]?.displayName ?? "Репетитор",
+          ])
+        )
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role, tutorIds, enrollments]);
+
   if (role === "tutor") {
-    return Object.fromEntries(enrollments.map((e) => [e.id, e.name]));
+    return Object.fromEntries((enrollments ?? []).map((e) => [e.id, e.name]));
   }
-
-  const profiles = await Promise.all(
-    enrollments.map((e) => getPublicTutorProfile(e.tutorId))
-  );
-
-  return Object.fromEntries(
-    enrollments.map((e, index) => [
-      e.id,
-      profiles[index]?.displayName ?? "Репетитор",
-    ])
-  );
+  return names;
 }

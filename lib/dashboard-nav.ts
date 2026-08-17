@@ -1,6 +1,7 @@
 import {
   BookOpen,
   CalendarDays,
+  CalendarRange,
   ClipboardList,
   LayoutDashboard,
   LineChart,
@@ -40,9 +41,10 @@ export const DASHBOARD_NAV: Record<Role, RoleNav> = {
     items: [
       { label: "Огляд", href: "/tutor", icon: LayoutDashboard },
       { label: "Профіль", href: "/tutor/profile", icon: UserRound },
-      { label: "Розклад", href: "/tutor/schedule", icon: CalendarDays },
+      { label: "Мої учні", href: "/tutor/students", icon: Users },
+      { label: "Розклад уроків", href: "/tutor/lessons", icon: CalendarRange },
+      { label: "Доступність", href: "/tutor/schedule", icon: CalendarDays },
       { label: "Виплати", href: "/tutor/payouts", icon: Wallet },
-      { label: "Мої учні", href: "/tutor", icon: Users, soon: true },
     ],
     action: { label: "Переглянути каталог", href: "/catalog" },
   },
