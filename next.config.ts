@@ -2,11 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /**
-   * firebase-admin не бандлимо, а лишаємо звичайним runtime-залежністю.
+   * firebase-admin не бандлимо, а лишаємо звичайною runtime-залежністю.
    *
-   * Його залежність jwks-rsa підключає ESM-пакет jose через require().
-   * Коли Next пакує це у свій серверний бандл, ланцюжок ламається з
-   * ERR_REQUIRE_ESM. Як зовнішній модуль пакет резолвиться штатно.
+   * Пакет покладається на динамічні require() і опційні нативні модулі —
+   * бандлер їх не відстежує. Як зовнішній модуль він резолвиться штатно.
+   * Це рекомендований спосіб підключення Admin SDK у Next.js.
    */
   serverExternalPackages: ["firebase-admin"],
 };
