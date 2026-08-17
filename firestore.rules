@@ -183,6 +183,66 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── students (enrollment) ──────────────────────────────
+    // Навчальний звʼязок. Створює лише сервер — з першої підтвердженої
+    // оплати. Сам документ є вузлом доступу: за його полями вирішується,
+    // хто бачить уроки й домашні завдання.
+    match /students/{studentId} {
+      function enrollment() {
+        return get(/databases/$(database)/documents/students/$(studentId)).data;
+      }
+      function isTutorOf(data) {
+        return isSignedIn() && data.tutorId == request.auth.uid;
+      }
+      function isStudentOf(data) {
+        return isSignedIn() && data.studentUid == request.auth.uid;
+      }
+      function isParentOf(data) {
+        return isSignedIn() && request.auth.uid in data.parentUids;
+      }
+      function isMember(data) {
+        return isTutorOf(data) || isStudentOf(data) || isParentOf(data);
+      }
+
+      allow get, list: if isMember(resource.data);
+
+      // Створення й видалення — виключно сервер (Admin SDK обходить правила).
+      allow create, delete: if false;
+
+      // Репетитор веде картку учня. Звʼязки й лічильники не чіпає:
+      // перші визначають доступ, другі рахує сервер після уроків.
+      allow update: if isTutorOf(resource.data)
+        && request.resource.data.tutorId == resource.data.tutorId
+        && request.resource.data.studentUid == resource.data.studentUid
+        && request.resource.data.parentUids == resource.data.parentUids
+        && request.resource.data.totalNewWords == resource.data.totalNewWords
+        && request.resource.data.lessonsCount == resource.data.lessonsCount;
+
+      // ── уроки ────────────────────────────────────────────
+      match /lessons/{lessonId} {
+        allow get, list: if isMember(enrollment());
+        // Урок створює сервер разом із оплатою; далі веде репетитор.
+        allow create: if false;
+        allow update: if isTutorOf(enrollment());
+        allow delete: if false;
+      }
+
+      // ── домашні завдання ─────────────────────────────────
+      match /homework/{homeworkId} {
+        allow get, list: if isMember(enrollment());
+        allow create: if isTutorOf(enrollment());
+
+        // Учень позначає виконання й прикладає файл — і більше нічого:
+        // ані текст завдання, ані дедлайн змінювати не може.
+        allow update: if isTutorOf(enrollment())
+          || (isStudentOf(enrollment())
+              && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'submissionFileUrl']));
+
+        allow delete: if isTutorOf(enrollment());
+      }
+    }
+
     // Решта колекцій закриті за замовчуванням — правила додаються по блоках плану.
     match /{document=**} {
       allow read, write: if false;

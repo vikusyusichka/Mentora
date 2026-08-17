@@ -292,7 +292,7 @@ export default async function TutorPublicProfilePage({ params }: PageProps) {
               Створити акаунт
             </ButtonLink>
             <p className="text-label-sm mt-3 text-center text-outline">
-              Бронювання слотів і оплата зʼявляться найближчим часом.
+              Оберіть час вище — оплата всередині платформи.
             </p>
           </div>
         </aside>

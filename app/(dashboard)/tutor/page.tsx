@@ -4,6 +4,7 @@ import { CalendarDays, UserRound, Users, Wallet } from "lucide-react";
 
 import { AuthGate } from "@/components/auth/auth-gate";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { UpcomingLessons } from "@/components/lessons/upcoming-lessons";
 import {
   SectionCards,
   type DashboardSection,
@@ -42,6 +43,11 @@ export default function TutorDashboardPage() {
         title="Кабінет репетитора"
         description="Почніть із профілю — без нього учні вас не знайдуть."
       >
+        <section className="rounded-card mb-8 border border-border bg-card p-6 shadow-level1 sm:p-8">
+          <h2 className="text-title-lg mb-5">Найближчі заняття</h2>
+          <UpcomingLessons role="tutor" />
+        </section>
+
         <SectionCards sections={SECTIONS} />
       </DashboardLayout>
     </AuthGate>

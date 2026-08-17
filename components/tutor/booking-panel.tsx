@@ -93,17 +93,12 @@ export function BookingPanel({
           <p className="text-label-md flex items-start gap-2 text-sage-green">
             <CheckCircle2 className="mt-0.5 size-4 shrink-0" strokeWidth={2} aria-hidden />
             <span>
-              Бронь створено й очікує оплати. Слот тримається за вами
-              обмежений час — оплата зʼявиться в наступному блоці.
+              Бронь створено. Слот тримається за вами обмежений час —
+              завершіть оплату, щоб заняття підтвердилось.
             </span>
           </p>
-          <ButtonLink
-            href="/student"
-            size="lg"
-            variant="outline"
-            className="mt-4 rounded-full"
-          >
-            Мої бронювання
+          <ButtonLink href="/student" size="lg" className="mt-4 rounded-full">
+            Перейти до оплати
           </ButtonLink>
         </div>
       )}

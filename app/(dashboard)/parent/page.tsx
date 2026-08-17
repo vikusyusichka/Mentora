@@ -4,6 +4,7 @@ import { BookOpen, KeyRound, LineChart } from "lucide-react";
 
 import { AuthGate } from "@/components/auth/auth-gate";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { UpcomingLessons } from "@/components/lessons/upcoming-lessons";
 import {
   SectionCards,
   type DashboardSection,
@@ -34,6 +35,11 @@ export default function ParentDashboardPage() {
         title="Кабінет батьків"
         description="Тут буде прогрес дитини. Щоб він зʼявився, потрібен інвайт-код від учня."
       >
+        <section className="rounded-card mb-8 border border-border bg-card p-6 shadow-level1 sm:p-8">
+          <h2 className="text-title-lg mb-5">Найближчі заняття дитини</h2>
+          <UpcomingLessons role="parent" />
+        </section>
+
         <SectionCards sections={SECTIONS} />
       </DashboardLayout>
     </AuthGate>

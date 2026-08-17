@@ -90,11 +90,30 @@ function paidSession(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const ENROLLMENT_ID = `${TUTOR_ID}__marko`;
+
+async function seedParticipants() {
+  await db.doc("users/marko").set({
+    role: "student",
+    displayName: "Марко Кравець",
+    email: "marko@example.com",
+  });
+  await db.doc(`tutorProfiles/${TUTOR_ID}`).set({
+    displayName: "Олена Вчителька",
+    languages: ["Англійська"],
+    isPublished: true,
+  });
+}
+
 async function clearAll() {
   for (const path of [
     `bookings/${BOOKING_ID}`,
     lockPath(),
     `payments/${SESSION_ID}`,
+    `students/${ENROLLMENT_ID}/lessons/${BOOKING_ID}`,
+    `students/${ENROLLMENT_ID}`,
+    "users/marko",
+    `tutorProfiles/${TUTOR_ID}`,
   ]) {
     await db.doc(path).delete();
   }
@@ -241,6 +260,122 @@ describe("гроші дійшли, а слот уже втрачено", () => {
     // Чужу бронь не чіпаємо.
     const lock = (await db.doc(lockPath()).get()).data();
     expect(lock?.bookingId).toBe("booking-other");
+  });
+});
+
+describe("оплата породжує навчальний звʼязок (B.4)", () => {
+  it("зʼявляється enrollment і перший урок", async () => {
+    await seedParticipants();
+    await seedBooking();
+
+    const { payload, header } = signedEvent(
+      "checkout.session.completed",
+      paidSession()
+    );
+    await applyPaymentEvent(
+      stripeProvider.parseWebhook(payload, header),
+      "stripe"
+    );
+
+    const enrollment = (await db.doc(`students/${ENROLLMENT_ID}`).get()).data();
+    expect(enrollment?.tutorId).toBe(TUTOR_ID);
+    expect(enrollment?.studentUid).toBe("marko");
+    expect(enrollment?.parentUids).toEqual([]);
+    expect(enrollment?.name).toBe("Марко Кравець");
+    // Репетитор викладає одну мову — її й підставляємо.
+    expect(enrollment?.languages).toEqual(["Англійська"]);
+    expect(enrollment?.lessonsCount).toBe(0);
+
+    const lesson = (
+      await db.doc(`students/${ENROLLMENT_ID}/lessons/${BOOKING_ID}`).get()
+    ).data();
+    expect(lesson?.slotStart).toBe(SLOT_START);
+    expect(lesson?.status).toBe("scheduled");
+    expect(lesson?.bookingId).toBe(BOOKING_ID);
+    expect(lesson?.report).toBeNull();
+  });
+
+  it("повторна оплата не дублює звʼязок і не плодить уроки", async () => {
+    await seedParticipants();
+    await seedBooking();
+
+    const { payload, header } = signedEvent(
+      "checkout.session.completed",
+      paidSession()
+    );
+    const event = stripeProvider.parseWebhook(payload, header);
+
+    await applyPaymentEvent(event, "stripe");
+    await applyPaymentEvent(event, "stripe");
+
+    const lessons = await db
+      .collection(`students/${ENROLLMENT_ID}/lessons`)
+      .get();
+    expect(lessons.size).toBe(1);
+  });
+
+  it("друга оплата тій самій парі додає урок у той самий звʼязок", async () => {
+    await seedParticipants();
+    await seedBooking();
+
+    const first = signedEvent("checkout.session.completed", paidSession());
+    await applyPaymentEvent(
+      stripeProvider.parseWebhook(first.payload, first.header),
+      "stripe"
+    );
+
+    // Друга бронь тієї самої пари — інший слот, інша сесія.
+    const secondSlot = "2026-09-14T15:00:00.000Z";
+    await db.doc("bookings/booking-2").set({
+      studentUserId: "marko",
+      tutorId: TUTOR_ID,
+      slotStart: secondSlot,
+      durationMin: 60,
+      isTrial: false,
+      status: "pending_payment",
+      amount: 480,
+      currency: "UAH",
+      platformFee: 24,
+      paymentId: null,
+      createdAt: "2026-09-08T10:00:00.000Z",
+      holdUntil: "2026-09-08T10:20:00.000Z",
+    });
+    await db
+      .doc(`tutorProfiles/${TUTOR_ID}/busySlots/${slotLockId(secondSlot)}`)
+      .set({
+        bookingId: "booking-2",
+        status: "pending_payment",
+        holdUntil: "2026-09-08T10:20:00.000Z",
+        slotStart: secondSlot,
+      });
+
+    const second = signedEvent(
+      "checkout.session.completed",
+      paidSession({ id: "cs_test_456", metadata: { bookingId: "booking-2" } })
+    );
+    await applyPaymentEvent(
+      stripeProvider.parseWebhook(second.payload, second.header),
+      "stripe"
+    );
+
+    const enrollments = await db
+      .collection("students")
+      .where("studentUid", "==", "marko")
+      .get();
+    expect(enrollments.size).toBe(1);
+
+    const lessons = await db
+      .collection(`students/${ENROLLMENT_ID}/lessons`)
+      .get();
+    expect(lessons.size).toBe(2);
+
+    // Прибираємо за собою те, що не входить у clearAll().
+    await db.doc("bookings/booking-2").delete();
+    await db.doc(`payments/cs_test_456`).delete();
+    await db.doc(`students/${ENROLLMENT_ID}/lessons/booking-2`).delete();
+    await db
+      .doc(`tutorProfiles/${TUTOR_ID}/busySlots/${slotLockId(secondSlot)}`)
+      .delete();
   });
 });
 

@@ -8,10 +8,16 @@ import {
   type BookingWithId,
   type BusySlot,
 } from "@/lib/booking";
+import {
+  enrollmentId,
+  guessLanguages,
+  type Enrollment,
+  type Lesson,
+} from "@/lib/enrollment";
 import type { Payment, PaymentProviderId } from "@/lib/payment";
 import { providerById } from "@/lib/payments";
 import type { PaymentEvent } from "@/lib/payments/provider";
-import type { TutorProfile } from "@/lib/tutor-profile";
+import type { Language, TutorProfile } from "@/lib/tutor-profile";
 
 /**
  * Серверна частина оплати: створення сесії й обробка вебхука.
@@ -188,6 +194,10 @@ export async function applyPaymentEvent(
     const lockSnap = await tx.get(lockRef);
     const lock = lockSnap.exists ? (lockSnap.data() as BusySlot) : null;
 
+    // Читання enrollment мусить статися ДО будь-якого запису: Firestore
+    // не дозволяє читати в транзакції після запису.
+    const enrollment = await readEnrollmentContext(tx, booking);
+
     // Сесія Stripe живе довше за утримання слоту (мінімум 30 хв проти
     // наших 20), тож слот міг дістатися іншому учневі. Тоді підтверджувати
     // бронь не можна — гроші повертаємо.
@@ -224,6 +234,8 @@ export async function applyPaymentEvent(
       },
       { merge: true }
     );
+
+    writeEnrollment(tx, booking, event.bookingId, enrollment);
   });
 
   // Повернення робимо після транзакції: мережевий виклик усередині неї
@@ -248,4 +260,81 @@ async function writePayment({
   payment: Payment;
 }): Promise<void> {
   await adminDb().doc(`payments/${providerRef}`).set(payment, { merge: true });
+}
+
+// ── Enrollment (Блок B.4) ─────────────────────────────────────────────
+//
+// Навчальний звʼязок народжується з першої підтвердженої оплати — і саме
+// в тій самій транзакції, що підтверджує бронь. Інакше зʼявився б стан
+// «оплачено, але вчитися ніде»: окремий крок міг би не виконатися.
+
+interface EnrollmentContext {
+  exists: boolean;
+  studentName: string;
+  tutorLanguages: Language[];
+}
+
+async function readEnrollmentContext(
+  tx: FirebaseFirestore.Transaction,
+  booking: Booking
+): Promise<EnrollmentContext> {
+  const db = adminDb();
+  const id = enrollmentId(booking.tutorId, booking.studentUserId);
+
+  const [enrollmentSnap, userSnap, profileSnap] = await Promise.all([
+    tx.get(db.doc(`students/${id}`)),
+    tx.get(db.doc(`users/${booking.studentUserId}`)),
+    tx.get(db.doc(`tutorProfiles/${booking.tutorId}`)),
+  ]);
+
+  return {
+    exists: enrollmentSnap.exists,
+    studentName:
+      (userSnap.get("displayName") as string | undefined) ||
+      (userSnap.get("email") as string | undefined) ||
+      "Учень",
+    tutorLanguages:
+      ((profileSnap.get("languages") as Language[] | undefined) ?? []),
+  };
+}
+
+function writeEnrollment(
+  tx: FirebaseFirestore.Transaction,
+  booking: Booking,
+  bookingId: string,
+  context: EnrollmentContext
+): void {
+  const db = adminDb();
+  const id = enrollmentId(booking.tutorId, booking.studentUserId);
+  const enrollmentRef = db.doc(`students/${id}`);
+  const now = new Date().toISOString();
+
+  if (!context.exists) {
+    const enrollment: Enrollment = {
+      tutorId: booking.tutorId,
+      studentUid: booking.studentUserId,
+      parentUids: [],
+      name: context.studentName,
+      languages: guessLanguages(context.tutorLanguages),
+      currentLevel: null,
+      goalLevel: null,
+      goalText: "",
+      totalNewWords: 0,
+      lessonsCount: 0,
+      createdAt: now,
+    };
+    tx.set(enrollmentRef, enrollment);
+  }
+
+  // Ідентифікатор уроку — ідентифікатор броні: повторний вебхук про ту
+  // саму оплату не створить другий урок на той самий слот.
+  const lesson: Lesson = {
+    slotStart: booking.slotStart,
+    durationMin: booking.durationMin,
+    status: "scheduled",
+    bookingId,
+    report: null,
+    createdAt: now,
+  };
+  tx.set(enrollmentRef.collection("lessons").doc(bookingId), lesson);
 }

@@ -8,6 +8,7 @@ import {
   SectionCards,
   type DashboardSection,
 } from "@/components/dashboard/section-cards";
+import { UpcomingLessons } from "@/components/lessons/upcoming-lessons";
 import { StudentBookings } from "./bookings";
 
 const SECTIONS: DashboardSection[] = [
@@ -41,6 +42,11 @@ export default function StudentDashboardPage() {
         title="Кабінет учня"
         description="Почніть із каталогу — оберіть репетитора, і тут зʼявляться заняття, прогрес і домашні завдання."
       >
+        <section className="rounded-card mb-8 border border-border bg-card p-6 shadow-level1 sm:p-8">
+          <h2 className="text-title-lg mb-5">Найближчі заняття</h2>
+          <UpcomingLessons role="student" />
+        </section>
+
         <section className="rounded-card mb-8 border border-border bg-card p-6 shadow-level1 sm:p-8">
           <h2 className="text-title-lg mb-5">Мої бронювання</h2>
           <StudentBookings />
