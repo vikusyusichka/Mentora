@@ -128,6 +128,13 @@ service cloud.firestore {
         allow delete: if isSelf(tutorId) && hasRole('tutor');
       }
 
+      // Публічна проєкція зайнятості (B.2): лише факт «слот зайнято»,
+      // без персональних даних. Пише виключно сервер через Admin SDK.
+      match /busySlots/{slotId} {
+        allow read: if isSelf(tutorId) || tutorIsPublished();
+        allow write: if false;
+      }
+
       // Ключ документа — дата YYYY-MM-DD у таймзоні репетитора.
       match /slotExceptions/{date} {
         allow read: if isSelf(tutorId) || tutorIsPublished();
@@ -137,6 +144,22 @@ service cloud.firestore {
         // Видалення = «скасувати виняток», штатна дія.
         allow delete: if isSelf(tutorId) && hasRole('tutor');
       }
+    }
+
+    // ── bookings ───────────────────────────────────────────
+    // Броню створює серверний роут через Admin SDK, тож клієнту запис
+    // закритий повністю: ані статус, ані суми, ані комісія не мають
+    // залежати від того, що надішле браузер.
+    match /bookings/{bookingId} {
+      function isParticipant() {
+        return isSignedIn()
+          && (resource.data.studentUserId == request.auth.uid
+              || resource.data.tutorId == request.auth.uid);
+      }
+
+      allow get: if isParticipant();
+      allow list: if isParticipant();
+      allow write: if false;
     }
 
     // Решта колекцій закриті за замовчуванням — правила додаються по блоках плану.

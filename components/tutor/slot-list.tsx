@@ -17,10 +17,16 @@ export function SlotList({
   slots,
   tutorTimeZone,
   maxDays = 7,
+  onSelect,
+  busySlot,
 }: {
   slots: MaterializedSlot[];
   tutorTimeZone: string;
   maxDays?: number;
+  /** Якщо передано — слоти стають кнопками бронювання. */
+  onSelect?: (slot: MaterializedSlot) => void;
+  /** Слот, для якого зараз триває запит. */
+  busySlot?: string | null;
 }) {
   // Зона глядача — зовнішні дані, яких на сервері не існує. useSyncExternalStore
   // саме для цього: серверний знімок `null` дає заглушку в HTML, клієнтський —
@@ -60,14 +66,35 @@ export function SlotList({
               {formatDateLabel(group.slots[0].startUtc, viewerTimeZone)}
             </h3>
             <div className="flex flex-wrap gap-2">
-              {group.slots.map((slot) => (
-                <span
-                  key={slot.startUtc}
-                  className="text-label-md rounded-full bg-soft-gold px-4 py-2 text-secondary"
-                >
-                  {formatTimeInZone(new Date(slot.startUtc), viewerTimeZone)}
-                </span>
-              ))}
+              {group.slots.map((slot) => {
+                const label = formatTimeInZone(
+                  new Date(slot.startUtc),
+                  viewerTimeZone
+                );
+
+                if (!onSelect) {
+                  return (
+                    <span
+                      key={slot.startUtc}
+                      className="text-label-md rounded-full bg-soft-gold px-4 py-2 text-secondary"
+                    >
+                      {label}
+                    </span>
+                  );
+                }
+
+                return (
+                  <button
+                    key={slot.startUtc}
+                    type="button"
+                    onClick={() => onSelect(slot)}
+                    disabled={busySlot !== null && busySlot !== undefined}
+                    className="text-label-md rounded-full border-2 border-transparent bg-soft-gold px-4 py-2 text-secondary transition-all hover:border-gold disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gold/40"
+                  >
+                    {busySlot === slot.startUtc ? "Бронюємо…" : label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}

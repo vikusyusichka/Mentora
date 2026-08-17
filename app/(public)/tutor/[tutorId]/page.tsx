@@ -13,13 +13,14 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { SlotList } from "@/components/tutor/slot-list";
+import { BookingPanel } from "@/components/tutor/booking-panel";
 import { ButtonLink } from "@/components/ui/button-link";
 import { materializeSlots, type MaterializedSlot } from "@/lib/availability";
 import {
   getAvailability,
   getSlotExceptions,
 } from "@/lib/firebase/availability-repo";
+import { getBusySlotStarts } from "@/lib/firebase/booking-repo";
 import { getPublicTutorProfile } from "@/lib/firebase/tutor-profile-repo";
 import { dateKeyInZone } from "@/lib/timezone";
 import {
@@ -60,19 +61,27 @@ async function loadUpcomingSlots(
 
   const now = new Date();
   const until = new Date(now.getTime() + SLOTS_DAYS * 86_400_000);
-  const exceptions = await getSlotExceptions(
-    tutorId,
-    dateKeyInZone(now, timezone),
-    dateKeyInZone(until, timezone)
-  );
 
-  return materializeSlots({
+  const [exceptions, busy] = await Promise.all([
+    getSlotExceptions(
+      tutorId,
+      dateKeyInZone(now, timezone),
+      dateKeyInZone(until, timezone)
+    ),
+    getBusySlotStarts(tutorId, now.toISOString(), until.toISOString(), now),
+  ]);
+
+  const slots = materializeSlots({
     availability,
     exceptions,
     timezone,
     from: now,
     days: SLOTS_DAYS,
   });
+
+  // Уже заброньоване прибираємо тут, а не в `materializeSlots`: розклад —
+  // це намір репетитора, а зайнятість — окремий стан, який змінюють учні.
+  return slots.filter((slot) => !busy.has(slot.startUtc));
 }
 
 /** Опис для пошуку й для картки при розшарюванні — перше речення біо. */
@@ -246,8 +255,15 @@ export default async function TutorPublicProfilePage({ params }: PageProps) {
           </section>
 
           <section className="rounded-card border border-border bg-card p-6 shadow-level1 sm:p-8">
-            <h2 className="text-title-lg mb-5">Вільний час</h2>
-            <SlotList slots={slots} tutorTimeZone={profile.timezone} />
+            <h2 className="text-title-lg mb-1">Вільний час</h2>
+            <p className="text-body-md mb-5 text-muted-foreground">
+              Оберіть зручний час — слот забронюється за вами.
+            </p>
+            <BookingPanel
+              tutorId={tutorId}
+              tutorTimeZone={profile.timezone}
+              slots={slots}
+            />
           </section>
         </article>
 
