@@ -10,11 +10,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "emulators": "firebase emulators:start",
-    "emulators:dev": "concurrently -n emu,next -c blue,green \"firebase emulators:start\" \"next dev\"",
+    "emulators": "node scripts/emulators.mjs",
+    "emulators:dev": "concurrently -n emu,next -c blue,green \"node scripts/emulators.mjs\" \"next dev\"",
     "functions:build": "npm --prefix functions run build",
     "test": "vitest run tests/unit",
-    "test:rules": "firebase emulators:exec --only firestore \"npx vitest run\""
+    "test:rules": "firebase emulators:exec --only firestore \"npx vitest run\"",
+    "seed": "node scripts/seed-demo.mjs",
+    "pay": "node scripts/pay.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

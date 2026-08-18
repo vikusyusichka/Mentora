@@ -66,3 +66,6 @@ functions/lib/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Знімок даних емуляторів (npm run emulators зберігає його між запусками)
+.emulator-data/
