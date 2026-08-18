@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteHeaderActions } from "@/components/site/site-header-actions";
 import { ButtonLink } from "@/components/ui/button-link";
 
 /**
@@ -26,16 +27,7 @@ export function SiteHeader() {
           >
             Каталог
           </ButtonLink>
-          <ButtonLink
-            href="/login"
-            variant="ghost"
-            className="text-label-md hidden rounded-full text-secondary sm:inline-flex"
-          >
-            Увійти
-          </ButtonLink>
-          <ButtonLink href="/register" className="text-label-md rounded-full px-5">
-            Реєстрація
-          </ButtonLink>
+          <SiteHeaderActions />
         </nav>
       </div>
     </header>
