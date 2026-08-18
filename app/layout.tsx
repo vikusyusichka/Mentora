@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
@@ -23,6 +23,26 @@ export const metadata: Metadata = {
   title: "Mentora — платформа для репетиторства",
   description:
     "Маркетплейс репетиторів: обери викладача, бронюй уроки й відстежуй прогрес.",
+  appleWebApp: {
+    title: "Mentora",
+    capable: true,
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+/**
+ * Колір панелі браузера — той самий maroon, що й сайдбар: на телефоні
+ * шапка системи зливається з інтерфейсом, а не ріже його білою смугою.
+ *
+ * `maximumScale` навмисно не обмежуємо: заборона зуму ламає доступність
+ * для тих, кому потрібне збільшення.
+ */
+export const viewport: Viewport = {
+  themeColor: "#451010",
+  colorScheme: "light",
 };
 
 export default function RootLayout({

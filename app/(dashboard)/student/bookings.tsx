@@ -185,8 +185,10 @@ export function StudentBookings() {
       </ul>
 
       <p className="text-label-sm text-outline">
-        Час показано у вашому поясі ({timeZone}). Слот тримається за вами
-        обмежений час — неоплачена бронь звільняється.
+        Час показано у вашому поясі ({timeZone}).
+        {bookings.some((b) => b.status === "pending_payment") && (
+          <> Слот тримається за вами обмежений час — неоплачена бронь звільняється.</>
+        )}
       </p>
     </div>
   );

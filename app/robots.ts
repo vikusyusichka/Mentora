@@ -11,7 +11,19 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/student", "/parent", "/tutor/profile", "/onboarding"],
+      // Кабінети за авторизацією й так недоступні, але витрачати на них
+      // краулінговий бюджет немає сенсу.
+      disallow: [
+        "/api/",
+        "/student",
+        "/parent",
+        "/onboarding",
+        "/tutor/profile",
+        "/tutor/schedule",
+        "/tutor/students",
+        "/tutor/lessons",
+        "/tutor/payouts",
+      ],
     },
     sitemap: `${siteUrl()}/sitemap.xml`,
   };

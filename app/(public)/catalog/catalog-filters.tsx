@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RotateCcw } from "lucide-react";
+import { ChevronDown, Loader2, RotateCcw, SlidersHorizontal } from "lucide-react";
 
 import { ChipToggleGroup } from "@/components/tutor/chip-toggle";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import {
   type Currency,
   type Language,
 } from "@/lib/tutor-profile";
+import { cn } from "@/lib/utils";
 
 /** Пауза перед переходом: щоб набір міста не давав запит на кожну літеру. */
 const APPLY_DELAY_MS = 350;
@@ -45,6 +46,7 @@ export function CatalogFilters({ filters }: { filters: CatalogFilters }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<CatalogFilters>(filters);
+  const [open, setOpen] = useState(false);
 
   const applied = catalogSearchParams(filters).toString();
   const draftQuery = catalogSearchParams(draft).toString();
@@ -94,20 +96,51 @@ export function CatalogFilters({ filters }: { filters: CatalogFilters }) {
   }
 
   const active = hasActiveFilters(draft);
+  const activeCount = catalogSearchParams(draft).size;
 
   return (
     <aside className="rounded-card border border-border bg-card p-6 shadow-level1 lg:sticky lg:top-24">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text-title-lg">Фільтри</h2>
-        {pending && (
-          <Loader2
-            className="size-4 animate-spin text-muted-foreground"
-            aria-label="Оновлюємо"
+      {/* На телефоні панель згорнута: розгорнутою вона займає півтора
+          екрана, і перший репетитор опиняється за межами видимого. */}
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 lg:cursor-default"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="text-title-lg flex items-center gap-2">
+          <SlidersHorizontal
+            className="size-5 text-secondary lg:hidden"
+            strokeWidth={2}
+            aria-hidden
           />
-        )}
-      </div>
+          Фільтри
+          {activeCount > 0 && (
+            <span className="text-label-sm rounded-full bg-soft-gold px-2.5 py-0.5 text-secondary">
+              {activeCount}
+            </span>
+          )}
+        </span>
 
-      <div className="space-y-6">
+        <span className="flex items-center gap-2">
+          {pending && (
+            <Loader2
+              className="size-4 animate-spin text-muted-foreground"
+              aria-label="Оновлюємо"
+            />
+          )}
+          <ChevronDown
+            className={cn(
+              "size-5 text-muted-foreground transition-transform lg:hidden",
+              open && "rotate-180"
+            )}
+            strokeWidth={2}
+            aria-hidden
+          />
+        </span>
+      </button>
+
+      <div className={cn("mt-5 space-y-6", !open && "hidden lg:block")}>
         <div className="space-y-2">
           <Label htmlFor="sort" className="text-label-md text-muted-foreground">
             Порядок
