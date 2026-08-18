@@ -7,6 +7,7 @@ import { ProgressPanel } from "@/components/progress/progress-panel";
 import { LessonHistory } from "@/components/lessons/lesson-history";
 import { UpcomingLessons } from "@/components/lessons/upcoming-lessons";
 import { StudentBookings } from "./bookings";
+import { MyReviews } from "./my-reviews";
 import { ParentAccess } from "./parent-access";
 
 export default function StudentDashboardPage() {
@@ -37,6 +38,11 @@ export default function StudentDashboardPage() {
             <HomeworkList role="student" />
           </section>
         </div>
+
+        <section className="rounded-card mb-8 border border-border bg-card p-6 shadow-level1 sm:p-8">
+          <h2 className="text-title-lg mb-5">Відгук про репетитора</h2>
+          <MyReviews />
+        </section>
 
         <section className="rounded-card mb-8 border border-border bg-card p-6 shadow-level1 sm:p-8">
           <h2 className="text-title-lg mb-5">Доступ для батьків</h2>

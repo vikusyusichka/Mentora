@@ -48,7 +48,9 @@ service cloud.firestore {
           && request.resource.data.get('payoutProvider', null)
              == resource.data.get('payoutProvider', null)
           && request.resource.data.get('payoutsEnabled', null)
-             == resource.data.get('payoutsEnabled', null);
+             == resource.data.get('payoutsEnabled', null)
+          && request.resource.data.get('ratingSum', null)
+             == resource.data.get('ratingSum', null);
       }
 
       function validProfile() {
@@ -88,7 +90,7 @@ service cloud.firestore {
         && request.resource.data.ratingAvg == 0
         && request.resource.data.ratingCount == 0
         && !request.resource.data.keys().hasAny(
-             ['payoutAccountId', 'payoutProvider', 'payoutsEnabled']
+             ['payoutAccountId', 'payoutProvider', 'payoutsEnabled', 'ratingSum']
            );
 
       allow update: if isSelf(tutorId)
@@ -241,6 +243,15 @@ service cloud.firestore {
 
         allow delete: if isTutorOf(enrollment());
       }
+    }
+
+    // ── reviews ────────────────────────────────────────────
+    // Читає будь-хто: відгуки — публічна частина вітрини, гість має
+    // бачити їх до реєстрації. Пише лише сервер: право на відгук дає
+    // проведений урок, а сам відгук рухає рейтинг у каталозі.
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow write: if false;
     }
 
     // ── invites ────────────────────────────────────────────

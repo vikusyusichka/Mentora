@@ -46,6 +46,14 @@ export {
 
 // ── Фільтри ───────────────────────────────────────────────────────────
 
+export const CATALOG_SORTS = ["price", "rating"] as const;
+export type CatalogSort = (typeof CATALOG_SORTS)[number];
+
+export const CATALOG_SORT_LABELS: Record<CatalogSort, string> = {
+  price: "Спочатку дешевші",
+  rating: "Спочатку з кращим рейтингом",
+};
+
 export interface CatalogFilters {
   language?: Language;
   level?: CefrLevel;
@@ -55,6 +63,7 @@ export interface CatalogFilters {
   maxPrice?: number;
   /** Діє лише разом із межами ціни — див. `priceCurrency()`. */
   currency?: Currency;
+  sort?: CatalogSort;
 }
 
 /** Назви параметрів в URL. Короткі — посилання на каталог люди шлють одне одному. */
@@ -66,6 +75,7 @@ const PARAM = {
   minPrice: "min",
   maxPrice: "max",
   currency: "cur",
+  sort: "sort",
 } as const;
 
 type RawParams = Record<string, string | string[] | undefined>;
@@ -105,6 +115,7 @@ export function parseCatalogFilters(raw: RawParams): CatalogFilters {
     minPrice: positiveNumber(raw, PARAM.minPrice),
     maxPrice: positiveNumber(raw, PARAM.maxPrice),
     currency: oneOf(raw, PARAM.currency, CURRENCIES),
+    sort: oneOf(raw, PARAM.sort, CATALOG_SORTS),
   };
 }
 
@@ -123,6 +134,10 @@ export function catalogSearchParams(filters: CatalogFilters): URLSearchParams {
   set(PARAM.maxPrice, filters.maxPrice);
   // Валюта без меж ціни нічого не означає — і в URL її тоді не тримаємо.
   if (hasPriceBound(filters)) set(PARAM.currency, filters.currency);
+  // Ціновий порядок і так за замовчуванням — у посиланні він зайвий.
+  if (filters.sort === "rating" && !hasPriceBound(filters)) {
+    set(PARAM.sort, filters.sort);
+  }
 
   return params;
 }
@@ -142,6 +157,24 @@ export function hasActiveFilters(filters: CatalogFilters): boolean {
  * однієї валюти. Поки жодної межі не задано — обмеження немає взагалі,
  * і в каталозі видно всіх незалежно від валюти.
  */
+/**
+ * За яким полем справді сортуємо.
+ *
+ * Діапазон ціни — inequality-фільтр, а Firestore вимагає, щоб перший
+ * `orderBy` збігався з його полем. Тому щойно задано межі ціни,
+ * сортування за рейтингом фізично неможливе — і ми чесно повертаємось
+ * до ціни, а не мовчки віддаємо порожню видачу.
+ */
+export function effectiveSort(filters: CatalogFilters): CatalogSort {
+  if (hasPriceBound(filters)) return "price";
+  return filters.sort ?? "price";
+}
+
+/** Чи заблоковане сортування за рейтингом просто зараз. */
+export function ratingSortBlocked(filters: CatalogFilters): boolean {
+  return hasPriceBound(filters);
+}
+
 export function priceCurrency(filters: CatalogFilters): Currency | null {
   if (!hasPriceBound(filters)) return null;
   return filters.currency ?? "UAH";
@@ -161,7 +194,8 @@ export interface CatalogItem extends TutorProfile {
  * гортання без повторного читання останнього документа.
  */
 export interface CatalogCursor {
-  price: number;
+  /** Значення поля сортування останнього показаного профілю. */
+  value: number;
   id: string;
 }
 
@@ -200,12 +234,16 @@ export async function fetchCatalogPage(
     constraints.push(where("pricePerLesson", "<=", filters.maxPrice));
   }
 
-  // Сортування за ціною — не примха: діапазон ціни це inequality-фільтр,
-  // а Firestore вимагає, щоб перший orderBy збігався з його полем.
-  // Другим ключем іде id — без нього курсор неоднозначний на однакових цінах.
-  constraints.push(orderBy("pricePerLesson", "asc"), orderBy(documentId(), "asc"));
+  // Другим ключем завжди id — без нього курсор неоднозначний там, де
+  // значення сортування збігаються (а однакова ціна чи рейтинг — норма).
+  const sort = effectiveSort(filters);
+  if (sort === "rating") {
+    constraints.push(orderBy("ratingAvg", "desc"), orderBy(documentId(), "asc"));
+  } else {
+    constraints.push(orderBy("pricePerLesson", "asc"), orderBy(documentId(), "asc"));
+  }
 
-  if (cursor) constraints.push(startAfter(cursor.price, cursor.id));
+  if (cursor) constraints.push(startAfter(cursor.value, cursor.id));
 
   // Беремо на один більше, ніж показуємо: зайвий документ — це відповідь
   // на питання «чи є ще сторінка», без окремого count-запиту.
@@ -222,9 +260,12 @@ export async function fetchCatalogPage(
   }));
 
   const last = items.at(-1);
+  const cursorValue =
+    sort === "rating" ? (last?.ratingAvg ?? 0) : (last?.pricePerLesson ?? 0);
+
   return {
     items,
-    cursor: hasMore && last ? { price: last.pricePerLesson, id: last.id } : null,
+    cursor: hasMore && last ? { value: cursorValue, id: last.id } : null,
   };
 }
 

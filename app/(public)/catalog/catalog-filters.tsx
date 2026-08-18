@@ -11,9 +11,14 @@ import { Label } from "@/components/ui/label";
 import {
   CATALOG_FORMATS,
   CATALOG_FORMAT_LABELS,
+  CATALOG_SORTS,
+  CATALOG_SORT_LABELS,
   catalogSearchParams,
+  effectiveSort,
   hasActiveFilters,
+  ratingSortBlocked,
   type CatalogFilters,
+  type CatalogSort,
 } from "@/lib/catalog";
 import {
   CEFR_LEVELS,
@@ -103,6 +108,36 @@ export function CatalogFilters({ filters }: { filters: CatalogFilters }) {
       </div>
 
       <div className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="sort" className="text-label-md text-muted-foreground">
+            Порядок
+          </Label>
+          <select
+            id="sort"
+            className="text-body-md h-10 w-full rounded-input border border-input bg-card px-3 disabled:opacity-60"
+            value={effectiveSort(draft)}
+            disabled={ratingSortBlocked(draft)}
+            onChange={(e) =>
+              setDraft((prev) => ({
+                ...prev,
+                sort: e.target.value as CatalogSort,
+              }))
+            }
+          >
+            {CATALOG_SORTS.map((value) => (
+              <option key={value} value={value}>
+                {CATALOG_SORT_LABELS[value]}
+              </option>
+            ))}
+          </select>
+          {ratingSortBlocked(draft) && (
+            <p className="text-label-sm text-outline">
+              Із заданою ціною Firestore сортує лише за нею. Приберіть межі
+              ціни, щоб сортувати за рейтингом.
+            </p>
+          )}
+        </div>
+
         <ChipToggleGroup
           label="Мова"
           options={LANGUAGES}

@@ -230,6 +230,15 @@ describe("tutorProfiles — оновлення й видалення", () => {
     );
   });
 
+  it("не можна підмінити суму оцінок", async () => {
+    await seed("tutorProfiles/olena", profileData({ ratingSum: 10, ratingCount: 2, ratingAvg: 5 }));
+    await assertFails(
+      updateDoc(doc(asTutor("olena"), "tutorProfiles/olena"), {
+        ratingSum: 100,
+      })
+    );
+  });
+
   it("не можна змінити власний рейтинг", async () => {
     await seed("tutorProfiles/olena", profileData());
     await assertFails(

@@ -355,3 +355,40 @@ describe("invites", () => {
     );
   });
 });
+
+describe("reviews", () => {
+  const reviewData = {
+    tutorId: "olena",
+    studentUserId: "marko",
+    studentName: "Марко Кравець",
+    rating: 5,
+    text: "Дуже задоволений.",
+    createdAt: "2026-09-10T10:00:00.000Z",
+    updatedAt: "2026-09-10T10:00:00.000Z",
+  };
+
+  it("відгуки читає будь-хто — це частина вітрини", async () => {
+    await seed("reviews/olena__marko", reviewData);
+    for (const ctx of [asGuest(), asStranger(), asTutor(), asParent()]) {
+      await assertSucceeds(getDoc(doc(ctx, "reviews/olena__marko")));
+    }
+  });
+
+  it("учень не може написати відгук напряму — право дає проведений урок", async () => {
+    await assertFails(
+      setDoc(doc(asStudent(), "reviews/olena__marko"), reviewData)
+    );
+  });
+
+  it("репетитор не може підправити свій відгук", async () => {
+    await seed("reviews/olena__marko", reviewData);
+    await assertFails(
+      updateDoc(doc(asTutor(), "reviews/olena__marko"), { rating: 5, text: "" })
+    );
+  });
+
+  it("відгук не видаляється з клієнта", async () => {
+    await seed("reviews/olena__marko", reviewData);
+    await assertFails(deleteDoc(doc(asStudent(), "reviews/olena__marko")));
+  });
+});

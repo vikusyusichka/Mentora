@@ -4,101 +4,278 @@
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filterTags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "cityKey", "order": "ASCENDING" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cityKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "cityKey", "order": "ASCENDING" },
-        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cityKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filterTags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "currency", "order": "ASCENDING" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "currency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "currency", "order": "ASCENDING" },
-        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "currency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filterTags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "cityKey", "order": "ASCENDING" },
-        { "fieldPath": "currency", "order": "ASCENDING" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cityKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "currency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tutorProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isPublished", "order": "ASCENDING" },
-        { "fieldPath": "cityKey", "order": "ASCENDING" },
-        { "fieldPath": "currency", "order": "ASCENDING" },
-        { "fieldPath": "filterTags", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "pricePerLesson", "order": "ASCENDING" }
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cityKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "currency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filterTags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "pricePerLesson",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "studentUserId", "order": "ASCENDING" },
-        { "fieldPath": "slotStart", "order": "ASCENDING" }
+        {
+          "fieldPath": "studentUserId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "slotStart",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "tutorId", "order": "ASCENDING" },
-        { "fieldPath": "slotStart", "order": "ASCENDING" }
+        {
+          "fieldPath": "tutorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "slotStart",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "bookings",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "tutorId", "order": "ASCENDING" },
-        { "fieldPath": "studentUserId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "tutorId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "studentUserId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratingAvg",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filterTags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "ratingAvg",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cityKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ratingAvg",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tutorProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "cityKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filterTags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "ratingAvg",
+          "order": "DESCENDING"
+        }
       ]
     }
   ],

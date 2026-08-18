@@ -13,6 +13,7 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { ReviewList } from "@/components/reviews/review-list";
 import { BookingPanel } from "@/components/tutor/booking-panel";
 import { ButtonLink } from "@/components/ui/button-link";
 import { materializeSlots, type MaterializedSlot } from "@/lib/availability";
@@ -252,6 +253,11 @@ export default async function TutorPublicProfilePage({ params }: PageProps) {
                 </div>
               </div>
             </div>
+          </section>
+
+          <section className="rounded-card border border-border bg-card p-6 shadow-level1 sm:p-8">
+            <h2 className="text-title-lg mb-5">Відгуки</h2>
+            <ReviewList tutorId={tutorId} />
           </section>
 
           <section className="rounded-card border border-border bg-card p-6 shadow-level1 sm:p-8">
