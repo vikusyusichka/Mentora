@@ -141,6 +141,30 @@ const STUDENTS = [
   },
 ];
 
+/**
+ * Прибирає попередній прогін.
+ *
+ * Без цього повторний `npm run seed` лишає уроки зі старими датами, і
+ * лічильники розходяться з тим, що видно на графіку. Скрипт має бути
+ * ідемпотентним: скільки разів не запусти — стан однаковий.
+ */
+async function clearDemoData(db, enrollmentId) {
+  const enrollment = db.doc(`students/${enrollmentId}`);
+  for (const name of ["lessons", "homework"]) {
+    const docs = await enrollment.collection(name).get();
+    await Promise.all(docs.docs.map((d) => d.ref.delete()));
+  }
+  await enrollment.delete();
+
+  for (const path of ["bookings", "payments"]) {
+    const docs = await db.collection(path).where("tutorId", "==", TUTOR_ID).get();
+    await Promise.all(docs.docs.map((d) => d.ref.delete()));
+  }
+
+  const locks = await db.collection(`tutorProfiles/${TUTOR_ID}/busySlots`).get();
+  await Promise.all(locks.docs.map((d) => d.ref.delete()));
+}
+
 async function main() {
   process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
   process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
@@ -188,8 +212,9 @@ async function main() {
   // Учень з історією: минулий урок зі звітом + майбутній оплачений.
   const student = STUDENTS.find((s) => s.withHistory);
   const [nextSlot] = upcomingSlots(18, 0, 1);
-  const pastSlot = new Date(Date.now() - 3 * 86_400_000).toISOString();
   const enrollmentId = `${TUTOR_ID}__${student.uid}`;
+
+  await clearDemoData(db, enrollmentId);
 
   await db.doc(`students/${enrollmentId}`).set({
     tutorId: TUTOR_ID,
@@ -200,26 +225,39 @@ async function main() {
     currentLevel: "A2",
     goalLevel: "B2",
     goalText: "Вільно спілкуватися в подорожах",
-    totalNewWords: 14,
-    lessonsCount: 1,
+    totalNewWords: 58,
+    lessonsCount: 5,
     createdAt: now,
   });
 
+  // Кілька минулих уроків зі звітами: щоб на дашборді учня було видно
+  // і підсумки, і графік (він з'являється від третього звіту).
+  const HISTORY = [
+    { daysAgo: 21, words: 8, practice: true, topic: "Знайомство й побутові фрази" },
+    { daysAgo: 14, words: 11, practice: false, topic: "Теперішній час, розпорядок дня" },
+    { daysAgo: 10, words: 16, practice: true, topic: "Їжа, замовлення в кафе" },
+    { daysAgo: 7, words: 9, practice: true, topic: "Дорога, транспорт, напрямки" },
+    { daysAgo: 3, words: 14, practice: true, topic: "Минулий час і подорожі" },
+  ];
+
   const lessons = [
-    {
-      id: "demo-lesson-past",
-      slotStart: pastSlot,
+    ...HISTORY.map((h, index) => ({
+      id: `demo-lesson-${index + 1}`,
+      slotStart: new Date(Date.now() - h.daysAgo * 86_400_000).toISOString(),
       status: "done",
-      isTrial: true,
-      amount: 200,
-      platformFee: 10,
+      isTrial: index === 0,
+      amount: index === 0 ? 200 : 480,
+      platformFee: index === 0 ? 10 : 24,
       report: {
-        topic: "Минулий час і подорожі",
-        newWordsCount: 14,
-        speakingPractice: true,
-        noteForStudent: "Добре тримає темп. Попрацювати над артиклями.",
+        topic: h.topic,
+        newWordsCount: h.words,
+        speakingPractice: h.practice,
+        noteForStudent:
+          index === HISTORY.length - 1
+            ? "Добре тримає темп. Попрацювати над артиклями."
+            : "",
       },
-    },
+    })),
     {
       id: "demo-lesson-next",
       slotStart: nextSlot,
@@ -272,7 +310,7 @@ async function main() {
     deadline: new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10),
     status: "assigned",
     submissionFileUrl: "",
-    lessonId: "demo-lesson-past",
+    lessonId: "demo-lesson-5",
     createdAt: now,
   });
 

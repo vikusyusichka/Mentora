@@ -54,14 +54,16 @@ export const DASHBOARD_NAV: Record<Role, RoleNav> = {
       { label: "Огляд", href: "/student", icon: LayoutDashboard },
       // Каталогу тут навмисно немає: до нього веде золота кнопка внизу —
       // для учня це головна дія, і дублювати її пунктом меню безглуздо.
-      { label: "Мої заняття", href: "/student", icon: BookOpen, soon: true },
+      //
+      // Решта — якорі на секції огляду, а не окремі сторінки. Так меню
+      // веде до справжнього вмісту й не обіцяє екранів, яких немає.
+      { label: "Мої заняття", href: "/student#lessons", icon: BookOpen },
       {
         label: "Домашні завдання",
-        href: "/student",
+        href: "/student#homework",
         icon: ClipboardList,
-        soon: true,
       },
-      { label: "Мій прогрес", href: "/student", icon: LineChart, soon: true },
+      { label: "Мій прогрес", href: "/student#progress", icon: LineChart },
     ],
     action: { label: "Знайти репетитора", href: "/catalog" },
   },
@@ -69,8 +71,8 @@ export const DASHBOARD_NAV: Record<Role, RoleNav> = {
     caption: "Кабінет батьків",
     items: [
       { label: "Огляд", href: "/parent", icon: LayoutDashboard },
-      { label: "Прогрес дитини", href: "/parent", icon: LineChart, soon: true },
-      { label: "Заняття", href: "/parent", icon: BookOpen, soon: true },
+      { label: "Прогрес дитини", href: "/parent#progress", icon: LineChart },
+      { label: "Заняття", href: "/parent#lessons", icon: BookOpen },
     ],
     action: { label: "Знайти репетитора", href: "/catalog" },
   },
