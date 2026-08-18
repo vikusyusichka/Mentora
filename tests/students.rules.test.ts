@@ -316,3 +316,42 @@ describe("homework", () => {
     );
   });
 });
+
+describe("invites", () => {
+  const inviteData = {
+    enrollmentId: ENROLLMENT,
+    studentUid: "marko",
+    tutorId: "olena",
+    role: "parent",
+    createdBy: "marko",
+    createdAt: "2026-09-01T10:00:00.000Z",
+    expiresAt: "2026-09-08T10:00:00.000Z",
+    usedBy: null,
+    usedAt: null,
+  };
+
+  it("учень читає власний код", async () => {
+    await seed("invites/ABCD2345", inviteData);
+    await assertSucceeds(getDoc(doc(asStudent(), "invites/ABCD2345")));
+  });
+
+  it("чужий код прочитати не можна — інакше його можна було б підібрати перебором", async () => {
+    await seed("invites/ABCD2345", inviteData);
+    await assertFails(getDoc(doc(asStranger(), "invites/ABCD2345")));
+    await assertFails(getDoc(doc(asParent(), "invites/ABCD2345")));
+    await assertFails(getDoc(doc(asGuest(), "invites/ABCD2345")));
+  });
+
+  it("код не створюється з клієнта — його видає сервер", async () => {
+    await assertFails(
+      setDoc(doc(asStudent(), "invites/NEWCODE1"), inviteData)
+    );
+  });
+
+  it("погасити код підміною документа не можна", async () => {
+    await seed("invites/ABCD2345", inviteData);
+    await assertFails(
+      updateDoc(doc(asParent(), "invites/ABCD2345"), { usedBy: "halyna" })
+    );
+  });
+});

@@ -165,9 +165,36 @@ async function clearDemoData(db, enrollmentId) {
   await Promise.all(locks.docs.map((d) => d.ref.delete()));
 }
 
+/**
+ * Емулятори стартують довше за Next, тож скрипт легко запустити зарано.
+ * Без цієї перевірки користувач побачив би стек ECONNREFUSED замість
+ * зрозумілої причини.
+ */
+async function requireEmulators() {
+  const targets = [
+    ["Firestore", `http://${process.env.FIRESTORE_EMULATOR_HOST}/`],
+    ["Authentication", `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/`],
+  ];
+
+  for (const [name, url] of targets) {
+    try {
+      await fetch(url, { signal: AbortSignal.timeout(3000) });
+    } catch {
+      console.error(
+        `Емулятор ${name} не відповідає (${url}).
+` +
+          "Запустіть `npm run emulators:dev` і дочекайтесь рядка «All emulators ready»."
+      );
+      process.exit(1);
+    }
+  }
+}
+
 async function main() {
   process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";
   process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
+
+  await requireEmulators();
 
   const app = initializeApp({ projectId: PROJECT_ID });
   const db = getFirestore(app);

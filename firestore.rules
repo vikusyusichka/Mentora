@@ -243,6 +243,16 @@ service cloud.firestore {
       }
     }
 
+    // ── invites ────────────────────────────────────────────
+    // Код — це право читати чужий навчальний звʼязок, тож і створення,
+    // і погашення робить сервер. Клієнту лишається читання власних кодів:
+    // учень має бачити, який код він видав і чи ним уже скористалися.
+    match /invites/{code} {
+      allow get, list: if isSignedIn()
+        && resource.data.createdBy == request.auth.uid;
+      allow write: if false;
+    }
+
     // Решта колекцій закриті за замовчуванням — правила додаються по блоках плану.
     match /{document=**} {
       allow read, write: if false;
